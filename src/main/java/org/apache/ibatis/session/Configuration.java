@@ -537,6 +537,17 @@ public class Configuration {
   }
 
   /**
+   * @since 3.5.1
+   */
+  public LanguageDriver getLanguageDriver(Class<? extends LanguageDriver> langClass) {
+    if (langClass == null) {
+      return languageRegistry.getDefaultDriver();
+    }
+    languageRegistry.register(langClass);
+    return languageRegistry.getDriver(langClass);
+  }
+
+  /**
    * @deprecated Use {@link #getDefaultScriptingLanguageInstance()}
    */
   @Deprecated
@@ -912,6 +923,7 @@ public class Configuration {
       return this;
     }
 
+    @Override
     @SuppressWarnings("unchecked")
     public V put(String key, V value) {
       if (containsKey(key)) {
@@ -929,6 +941,7 @@ public class Configuration {
       return super.put(key, value);
     }
 
+    @Override
     public V get(Object key) {
       V value = super.get(key);
       if (value == null) {

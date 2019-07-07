@@ -96,14 +96,14 @@ public final class TypeHandlerRegistry {
     register(String.class, JdbcType.CHAR, new StringTypeHandler());
     register(String.class, JdbcType.CLOB, new ClobTypeHandler());
     register(String.class, JdbcType.VARCHAR, new StringTypeHandler());
-    register(String.class, JdbcType.LONGVARCHAR, new ClobTypeHandler());
+    register(String.class, JdbcType.LONGVARCHAR, new StringTypeHandler());
     register(String.class, JdbcType.NVARCHAR, new NStringTypeHandler());
     register(String.class, JdbcType.NCHAR, new NStringTypeHandler());
     register(String.class, JdbcType.NCLOB, new NClobTypeHandler());
     register(JdbcType.CHAR, new StringTypeHandler());
     register(JdbcType.VARCHAR, new StringTypeHandler());
     register(JdbcType.CLOB, new ClobTypeHandler());
-    register(JdbcType.LONGVARCHAR, new ClobTypeHandler());
+    register(JdbcType.LONGVARCHAR, new StringTypeHandler());
     register(JdbcType.NVARCHAR, new NStringTypeHandler());
     register(JdbcType.NCHAR, new NStringTypeHandler());
     register(JdbcType.NCLOB, new NClobTypeHandler());
@@ -146,17 +146,17 @@ public final class TypeHandlerRegistry {
 
     register(String.class, JdbcType.SQLXML, new SqlxmlTypeHandler());
 
-    register(Instant.class, InstantTypeHandler.class);
-    register(LocalDateTime.class, LocalDateTimeTypeHandler.class);
-    register(LocalDate.class, LocalDateTypeHandler.class);
-    register(LocalTime.class, LocalTimeTypeHandler.class);
-    register(OffsetDateTime.class, OffsetDateTimeTypeHandler.class);
-    register(OffsetTime.class, OffsetTimeTypeHandler.class);
-    register(ZonedDateTime.class, ZonedDateTimeTypeHandler.class);
-    register(Month.class, MonthTypeHandler.class);
-    register(Year.class, YearTypeHandler.class);
-    register(YearMonth.class, YearMonthTypeHandler.class);
-    register(JapaneseDate.class, JapaneseDateTypeHandler.class);
+    register(Instant.class, new InstantTypeHandler());
+    register(LocalDateTime.class, new LocalDateTimeTypeHandler());
+    register(LocalDate.class, new LocalDateTypeHandler());
+    register(LocalTime.class, new LocalTimeTypeHandler());
+    register(OffsetDateTime.class, new OffsetDateTimeTypeHandler());
+    register(OffsetTime.class, new OffsetTimeTypeHandler());
+    register(ZonedDateTime.class, new ZonedDateTimeTypeHandler());
+    register(Month.class, new MonthTypeHandler());
+    register(Year.class, new YearTypeHandler());
+    register(YearMonth.class, new YearMonthTypeHandler());
+    register(JapaneseDate.class, new JapaneseDateTypeHandler());
 
     // issue #273
     register(Character.class, new CharacterTypeHandler());
@@ -241,11 +241,12 @@ public final class TypeHandlerRegistry {
     }
     if (jdbcHandlerMap == null && type instanceof Class) {
       Class<?> clazz = (Class<?>) type;
-      if (clazz.isEnum()) {
-        jdbcHandlerMap = getJdbcHandlerMapForEnumInterfaces(clazz, clazz);
+      if (Enum.class.isAssignableFrom(clazz)) {
+        Class<?> enumClass = clazz.isAnonymousClass() ? clazz.getSuperclass() : clazz;
+        jdbcHandlerMap = getJdbcHandlerMapForEnumInterfaces(enumClass, enumClass);
         if (jdbcHandlerMap == null) {
-          register(clazz, getInstance(clazz, defaultEnumTypeHandler));
-          return typeHandlerMap.get(clazz);
+          register(enumClass, getInstance(enumClass, defaultEnumTypeHandler));
+          return typeHandlerMap.get(enumClass);
         }
       } else {
         jdbcHandlerMap = getJdbcHandlerMapForSuperclass(clazz);

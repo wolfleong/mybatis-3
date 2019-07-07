@@ -29,6 +29,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.apache.ibatis.BaseDataTest;
+import org.apache.ibatis.annotations.DeleteProvider;
 import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.SelectProvider;
 import org.apache.ibatis.builder.BuilderException;
@@ -45,6 +46,7 @@ import org.junit.jupiter.api.Test;
 class SqlProviderTest {
 
   private static SqlSessionFactory sqlSessionFactory;
+  private static SqlSessionFactory sqlSessionFactoryForDerby;
 
   @BeforeAll
   static void setUp() throws Exception {
@@ -53,11 +55,18 @@ class SqlProviderTest {
         .getResourceAsReader("org/apache/ibatis/submitted/sqlprovider/mybatis-config.xml")) {
       sqlSessionFactory = new SqlSessionFactoryBuilder().build(reader);
       sqlSessionFactory.getConfiguration().addMapper(StaticMethodSqlProviderMapper.class);
+      sqlSessionFactory.getConfiguration().addMapper(DatabaseIdMapper.class);
     }
-
     // populate in-memory database
     BaseDataTest.runScript(sqlSessionFactory.getConfiguration().getEnvironment().getDataSource(),
             "org/apache/ibatis/submitted/sqlprovider/CreateDB.sql");
+
+    // create a SqlSessionFactory
+    try (Reader reader = Resources
+        .getResourceAsReader("org/apache/ibatis/submitted/sqlprovider/mybatis-config.xml")) {
+      sqlSessionFactoryForDerby = new SqlSessionFactoryBuilder().build(reader, "development-derby");
+      sqlSessionFactoryForDerby.getConfiguration().addMapper(DatabaseIdMapper.class);
+    }
   }
 
   // Test for list
@@ -273,6 +282,32 @@ class SqlProviderTest {
   }
 
   @Test
+  void omitType() throws NoSuchMethodException {
+    try {
+      Class<?> mapperType = ErrorMapper.class;
+      Method mapperMethod = mapperType.getMethod("omitType");
+      new ProviderSqlSource(new Configuration(),
+          mapperMethod.getAnnotation(SelectProvider.class), mapperType, mapperMethod);
+      fail();
+    } catch (BuilderException e) {
+      assertTrue(e.getMessage().contains("Please specify either 'value' or 'type' attribute of @SelectProvider at the 'public abstract void org.apache.ibatis.submitted.sqlprovider.SqlProviderTest$ErrorMapper.omitType()'."));
+    }
+  }
+
+  @Test
+  void differentTypeAndValue() throws NoSuchMethodException {
+    try {
+      Class<?> mapperType = ErrorMapper.class;
+      Method mapperMethod = mapperType.getMethod("differentTypeAndValue");
+      new ProviderSqlSource(new Configuration(),
+          mapperMethod.getAnnotation(DeleteProvider.class), mapperType, mapperMethod);
+      fail();
+    } catch (BuilderException e) {
+      assertTrue(e.getMessage().contains("Cannot specify different class on 'value' and 'type' attribute of @DeleteProvider at the 'public abstract void org.apache.ibatis.submitted.sqlprovider.SqlProviderTest$ErrorMapper.differentTypeAndValue()'."));
+    }
+  }
+
+  @Test
   void multipleProviderContext() throws NoSuchMethodException {
     try {
       Class<?> mapperType = ErrorMapper.class;
@@ -468,8 +503,15 @@ class SqlProviderTest {
 
     @SelectProvider(type = ErrorSqlBuilder.class, method = "multipleProviderContext")
     void multipleProviderContext();
+
+    @SelectProvider
+    void omitType();
+
+    @DeleteProvider(value = String.class, type = Integer.class)
+    void differentTypeAndValue();
   }
 
+  @SuppressWarnings("unused")
   public static class ErrorSqlBuilder {
     public void methodNotFound() {
       throw new UnsupportedOperationException("methodNotFound");
@@ -508,6 +550,7 @@ class SqlProviderTest {
     @SelectProvider(type = SqlProvider.class, method = "oneArgumentAndProviderContext")
     String oneArgumentAndProviderContext(Integer value);
 
+    @SuppressWarnings("unused")
     class SqlProvider {
 
       public static String noArgument() {
@@ -536,6 +579,82 @@ class SqlProviderTest {
 
     }
 
+  }
+
+  @Test
+  void shouldInsertUserSelective() {
+    try (SqlSession sqlSession = sqlSessionFactory.openSession()) {
+      Mapper mapper = sqlSession.getMapper(Mapper.class);
+      User user = new User();
+      user.setId(999);
+      mapper.insertSelective(user);
+
+      User loadedUser = mapper.getUser(999);
+      assertNull(loadedUser.getName());
+    }
+  }
+
+
+  @Test
+  void shouldUpdateUserSelective() {
+    try (SqlSession sqlSession = sqlSessionFactory.openSession()) {
+      Mapper mapper = sqlSession.getMapper(Mapper.class);
+      User user = new User();
+      user.setId(999);
+      user.setName("MyBatis");
+      mapper.insert(user);
+
+      user.setName(null);
+      mapper.updateSelective(user);
+
+      User loadedUser = mapper.getUser(999);
+      assertEquals("MyBatis", loadedUser.getName());
+    }
+  }
+
+  @Test
+  void mapperGetByEntity() {
+    try (SqlSession sqlSession = sqlSessionFactory.openSession()) {
+      Mapper mapper = sqlSession.getMapper(Mapper.class);
+      User query = new User();
+      query.setName("User4");
+      assertEquals(1, mapper.getByEntity(query).size());
+      query = new User();
+      query.setId(1);
+      assertEquals(1, mapper.getByEntity(query).size());
+      query = new User();
+      query.setId(1);
+      query.setName("User4");
+      assertEquals(0, mapper.getByEntity(query).size());
+    }
+  }
+
+  @Test
+  void shouldPassedDatabaseIdToProviderMethod() {
+    try (SqlSession sqlSession = sqlSessionFactory.openSession()){
+      DatabaseIdMapper mapper = sqlSession.getMapper(DatabaseIdMapper.class);
+      assertEquals("hsql", mapper.selectDatabaseId());
+    }
+    try (SqlSession sqlSession = sqlSessionFactoryForDerby.openSession()){
+      DatabaseIdMapper mapper = sqlSession.getMapper(DatabaseIdMapper.class);
+      assertEquals("derby", mapper.selectDatabaseId());
+    }
+  }
+
+  interface DatabaseIdMapper {
+    @SelectProvider(type = SqlProvider.class)
+    String selectDatabaseId();
+
+    @SuppressWarnings("unused")
+    class SqlProvider {
+      public static String provideSql(ProviderContext context) {
+        if ("hsql".equals(context.getDatabaseId())) {
+          return "SELECT '" + context.getDatabaseId() + "' FROM INFORMATION_SCHEMA.SYSTEM_USERS";
+        } else {
+          return "SELECT '" + context.getDatabaseId() + "' FROM SYSIBM.SYSDUMMY1";
+        }
+      }
+    }
   }
 
 }
