@@ -23,6 +23,7 @@ import org.apache.ibatis.cache.CacheException;
 
 /**
  * @author Clinton Begin
+ * 不过期缓存, 也就是HashMap
  */
 public class PerpetualCache implements Cache {
 
