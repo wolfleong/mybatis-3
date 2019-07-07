@@ -48,10 +48,14 @@ public class UnpooledDataSource implements DataSource {
   private String password;
 
   private Boolean autoCommit;
+  /**
+   * 默认的事务隔离级别
+   */
   private Integer defaultTransactionIsolationLevel;
   private Integer defaultNetworkTimeout;
 
   static {
+    //将所有已经注册的Driver设置到registeredDrivers
     Enumeration<Driver> drivers = DriverManager.getDrivers();
     while (drivers.hasMoreElements()) {
       Driver driver = drivers.nextElement();
@@ -255,6 +259,9 @@ public class UnpooledDataSource implements DataSource {
     }
   }
 
+  /**
+   * 这里用了一层代理主要是为了返回自定义的日志Logger
+   */
   private static class DriverProxy implements Driver {
     private Driver driver;
 

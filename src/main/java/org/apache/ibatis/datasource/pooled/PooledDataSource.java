@@ -45,15 +45,46 @@ public class PooledDataSource implements DataSource {
   private final UnpooledDataSource dataSource;
 
   // OPTIONAL CONFIGURATION FIELDS
+  /**
+   * 最大活跃连接数
+   */
   protected int poolMaximumActiveConnections = 10;
+  /**
+   * 最大空闲连接数
+   */
   protected int poolMaximumIdleConnections = 5;
+  /**
+   * 在被强制返回之前，池中连接被检出（checked out）时间。单位：毫秒
+   */
   protected int poolMaximumCheckoutTime = 20000;
+  /**
+   * 获取连接的等待时间
+   */
   protected int poolTimeToWait = 20000;
+
+  /**
+   * 这是一个关于坏连接容忍度的底层设置，作用于每一个尝试从缓存池获取连接的线程. 如果这个线程获取到的是一个坏的连接，
+   * 那么这个数据源允许这个线程尝试重新获取一个新的连接，但是这个重新尝试的次数不应该超过 poolMaximumIdleConnections
+   * 与 poolMaximumLocalBadConnectionTolerance 之和。
+   */
   protected int poolMaximumLocalBadConnectionTolerance = 3;
+  /**
+   * 检测数据库是否通的sql
+   */
   protected String poolPingQuery = "NO PING QUERY SET";
+  /**
+   * 是否启用检测
+   */
   protected boolean poolPingEnabled;
+
+  /**
+   * 未使用连接多久后才去检测, 默认是0, 每次都检测
+   */
   protected int poolPingConnectionsNotUsedFor;
 
+  /**
+   * 用户名, 账号, 密码拼接字符串的hashcode
+   */
   private int expectedConnectionTypeCode;
 
   public PooledDataSource() {
@@ -316,6 +347,7 @@ public class PooledDataSource implements DataSource {
 
   /**
    * Closes all active and idle connections in the pool.
+   * 关闭所有空闲连接和活跃连接
    */
   public void forceCloseAll() {
     synchronized (state) {
@@ -362,6 +394,9 @@ public class PooledDataSource implements DataSource {
     return ("" + url + username + password).hashCode();
   }
 
+  /**
+   * 返回连接到池里, 主要在代表对象中被调用
+   */
   protected void pushConnection(PooledConnection conn) throws SQLException {
 
     synchronized (state) {

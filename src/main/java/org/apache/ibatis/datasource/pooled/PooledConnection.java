@@ -24,6 +24,7 @@ import java.sql.SQLException;
 import org.apache.ibatis.reflection.ExceptionUtil;
 
 /**
+ * 代理连接的作用是, 处理关闭时返回池里, 和每次调用前检查连接是否失效
  * @author Clinton Begin
  */
 class PooledConnection implements InvocationHandler {
@@ -232,6 +233,7 @@ class PooledConnection implements InvocationHandler {
   @Override
   public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
     String methodName = method.getName();
+    //当连接关闭的时候, 不直接关闭, 而是将连接放回池子
     if (CLOSE.hashCode() == methodName.hashCode() && CLOSE.equals(methodName)) {
       dataSource.pushConnection(this);
       return null;
@@ -240,6 +242,7 @@ class PooledConnection implements InvocationHandler {
       if (!Object.class.equals(method.getDeclaringClass())) {
         // issue #579 toString() should never fail
         // throw an SQLException instead of a Runtime
+        //每次调用连接的方法使用前, 都检测一下连接是否合法
         checkConnection();
       }
       return method.invoke(realConnection, args);
