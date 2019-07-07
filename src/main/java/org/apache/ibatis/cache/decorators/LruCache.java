@@ -22,8 +22,9 @@ import org.apache.ibatis.cache.Cache;
 
 /**
  * Lru (least recently used) cache decorator.
- *  基于最近使用不删除的原则
+ *  基于最近使用不删除的原则, 框架使用LinkedHashMap来实现
  *  可以用链表和HashMap自定义实现, 每获取一次值, 则将实体放头部, 当实体个数超出长度时, 将链表最后一个作为最老的删除
+ *
  * @author Clinton Begin
  */
 public class LruCache implements Cache {
