@@ -27,7 +27,9 @@ import org.apache.ibatis.io.Resources;
 
 /**
  * 未知类型的总结:
- *    JavaType => JdbcType, 有参数: 根据参数的类型来获取TypeHandler, 没有参数则是ObjectTypeHandler
+ *    JavaType => JdbcType
+ *        参数不为null => 根据参数的Class和JdbcType来获取TypeHandler
+ *        参数为null  => 用ObjectTypeHandler处理
  *    JdbcType => JavaType, 根据返回的列给的类型来确定JavaType和JdbcType
  * @author Clinton Begin
  */
