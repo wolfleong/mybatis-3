@@ -26,6 +26,9 @@ import java.util.Map;
 import org.apache.ibatis.io.Resources;
 
 /**
+ * 未知类型的总结:
+ *    JavaType => JdbcType, 有参数: 根据参数的类型来获取TypeHandler, 没有参数则是ObjectTypeHandler
+ *    JdbcType => JavaType, 根据返回的列给的类型来确定JavaType和JdbcType
  * @author Clinton Begin
  */
 public class UnknownTypeHandler extends BaseTypeHandler<Object> {
@@ -68,6 +71,9 @@ public class UnknownTypeHandler extends BaseTypeHandler<Object> {
     return cs.getObject(columnIndex);
   }
 
+  /**
+   * 根据参数类型和JdbcType来查找, 如果参数为空, 则直接返回ObjectType
+   */
   private TypeHandler<?> resolveTypeHandler(Object parameter, JdbcType jdbcType) {
     TypeHandler<?> handler;
     if (parameter == null) {
@@ -82,6 +88,9 @@ public class UnknownTypeHandler extends BaseTypeHandler<Object> {
     return handler;
   }
 
+  /**
+   * 先将列的名称转换成索引, 再调用下面的resolveTypeHandler
+   */
   private TypeHandler<?> resolveTypeHandler(ResultSet rs, String column) {
     try {
       Map<String,Integer> columnIndexLookup;
@@ -106,6 +115,9 @@ public class UnknownTypeHandler extends BaseTypeHandler<Object> {
     }
   }
 
+  /**
+   * 根据查询列的类型来反推判出JavaType和JdbcType
+   */
   private TypeHandler<?> resolveTypeHandler(ResultSetMetaData rsmd, Integer columnIndex) {
     TypeHandler<?> handler = null;
     JdbcType jdbcType = safeGetJdbcTypeForColumn(rsmd, columnIndex);
