@@ -41,6 +41,7 @@ public abstract class TypeReference<T> {
         return getSuperclassTypeParameter(clazz.getSuperclass());
       }
 
+      //有继承TypeReference但是没有写泛型的, 直接报错
       throw new TypeException("'" + getClass() + "' extends TypeReference but misses the type parameter. "
         + "Remove the extension or add a type parameter to it.");
     }
