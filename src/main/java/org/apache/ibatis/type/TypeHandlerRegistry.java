@@ -1,17 +1,17 @@
 /**
- *    Copyright 2009-2019 the original author or authors.
- *
- *    Licensed under the Apache License, Version 2.0 (the "License");
- *    you may not use this file except in compliance with the License.
- *    You may obtain a copy of the License at
- *
- *       http://www.apache.org/licenses/LICENSE-2.0
- *
- *    Unless required by applicable law or agreed to in writing, software
- *    distributed under the License is distributed on an "AS IS" BASIS,
- *    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *    See the License for the specific language governing permissions and
- *    limitations under the License.
+ * Copyright 2009-2019 the original author or authors.
+ * <p>
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ * <p>
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * <p>
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 package org.apache.ibatis.type;
 
@@ -52,14 +52,29 @@ import org.apache.ibatis.io.Resources;
  * @author Kazuki Shimizu
  */
 public final class TypeHandlerRegistry {
-
-  private final Map<JdbcType, TypeHandler<?>>  jdbcTypeHandlerMap = new EnumMap<>(JdbcType.class);
+  /**
+   * JdbcType和TypeHandler的关系
+   */
+  private final Map<JdbcType, TypeHandler<?>> jdbcTypeHandlerMap = new EnumMap<>(JdbcType.class);
+  /**
+   * 存JavaType和TypeHandler的关系, 一个JavaType可以对应多个JdbcType的TypeHandler,
+   * JdbcType为null的TypeHandler为JavaType的默认TypeHandler
+   *
+   */
   private final Map<Type, Map<JdbcType, TypeHandler<?>>> typeHandlerMap = new ConcurrentHashMap<>();
   private final TypeHandler<Object> unknownTypeHandler = new UnknownTypeHandler(this);
+  /**
+   * 所有 TypeHandler 的“集合”
+   */
   private final Map<Class<?>, TypeHandler<?>> allTypeHandlersMap = new HashMap<>();
 
+  /**
+   * 空Map, 使用代替null
+   */
   private static final Map<JdbcType, TypeHandler<?>> NULL_TYPE_HANDLER_MAP = Collections.emptyMap();
-
+  /**
+   * 默认的枚举处理器
+   */
   private Class<? extends TypeHandler> defaultEnumTypeHandler = EnumTypeHandler.class;
 
   public TypeHandlerRegistry() {
@@ -236,15 +251,19 @@ public final class TypeHandlerRegistry {
 
   private Map<JdbcType, TypeHandler<?>> getJdbcHandlerMap(Type type) {
     Map<JdbcType, TypeHandler<?>> jdbcHandlerMap = typeHandlerMap.get(type);
+    //如果查询是NULL_TYPE_HANDLER_MAP, 表表明, type的jdbcHandlerMap已经查询过, 且确定为null
     if (NULL_TYPE_HANDLER_MAP.equals(jdbcHandlerMap)) {
       return null;
     }
+    //如果找不到, class有可能是枚举类
     if (jdbcHandlerMap == null && type instanceof Class) {
       Class<?> clazz = (Class<?>) type;
       if (Enum.class.isAssignableFrom(clazz)) {
+        //如果是匿名类, 则返回父类
         Class<?> enumClass = clazz.isAnonymousClass() ? clazz.getSuperclass() : clazz;
         jdbcHandlerMap = getJdbcHandlerMapForEnumInterfaces(enumClass, enumClass);
         if (jdbcHandlerMap == null) {
+          //找不到, 则用默认的defaultEnumTypeHandler生成TypeHandler类
           register(enumClass, getInstance(enumClass, defaultEnumTypeHandler));
           return typeHandlerMap.get(enumClass);
         }
@@ -252,10 +271,17 @@ public final class TypeHandlerRegistry {
         jdbcHandlerMap = getJdbcHandlerMapForSuperclass(clazz);
       }
     }
+
+    //如果最后都找不到 jdbcHandlerMap, 则直接将当前NULL_TYPE_HANDLER_MAP放到typeHandlerMap中, 提升查询速度, 避免二次查找
+    // 如果查询 jdbcHandlerMap是null, 会重复上面的查找过程, 所以有NULL_TYPE_HANDLER_MAP的作用
     typeHandlerMap.put(type, jdbcHandlerMap == null ? NULL_TYPE_HANDLER_MAP : jdbcHandlerMap);
     return jdbcHandlerMap;
   }
 
+  /**
+   * 从枚举的接口中找Map<JdbcType, TypeHandler<?>> ,
+   * 如果找到了, 则用当前的枚举类重新生成个typeHandler, 再返回
+   */
   private Map<JdbcType, TypeHandler<?>> getJdbcHandlerMapForEnumInterfaces(Class<?> clazz, Class<?> enumClazz) {
     for (Class<?> iface : clazz.getInterfaces()) {
       Map<JdbcType, TypeHandler<?>> jdbcHandlerMap = typeHandlerMap.get(iface);
@@ -267,6 +293,7 @@ public final class TypeHandlerRegistry {
         HashMap<JdbcType, TypeHandler<?>> newMap = new HashMap<>();
         for (Entry<JdbcType, TypeHandler<?>> entry : jdbcHandlerMap.entrySet()) {
           // Create a type handler instance with enum type as a constructor arg
+          //用当前的枚举类重新生成一个TypeHandler注册进当前的JdbcType中
           newMap.put(entry.getKey(), getInstance(enumClazz, entry.getValue().getClass()));
         }
         return newMap;
@@ -275,8 +302,12 @@ public final class TypeHandlerRegistry {
     return null;
   }
 
+  /**
+   * 从父类中找Map<JdbcType, TypeHandler<?>>, 如果找不到, 继续往上层找, 直到没有父类或父类是Object
+   * 就返回null
+   */
   private Map<JdbcType, TypeHandler<?>> getJdbcHandlerMapForSuperclass(Class<?> clazz) {
-    Class<?> superclass =  clazz.getSuperclass();
+    Class<?> superclass = clazz.getSuperclass();
     if (superclass == null || Object.class.equals(superclass)) {
       return null;
     }
@@ -300,7 +331,7 @@ public final class TypeHandlerRegistry {
         soleHandler = handler;
       } else if (!handler.getClass().equals(soleHandler.getClass())) {
         // More than one type handlers registered.
-        //同一个type有多个TypeHandle, 只返回null,
+        //同一个type有多个TypeHandle, 没办法确定返回那个, 所以只能返回null
         return null;
       }
     }
@@ -376,6 +407,10 @@ public final class TypeHandlerRegistry {
     register((Type) type, jdbcType, handler);
   }
 
+  /**
+   * 这个是最终的调用的方法
+   * 注意: JdbcType是可以为null, 当JdbcType为null时, 这个TypeHandler为JavaType的默认
+   */
   private void register(Type javaType, JdbcType jdbcType, TypeHandler<?> handler) {
     if (javaType != null) {
       Map<JdbcType, TypeHandler<?>> map = typeHandlerMap.get(javaType);
