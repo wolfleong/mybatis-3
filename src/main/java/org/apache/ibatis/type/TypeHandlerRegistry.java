@@ -288,6 +288,11 @@ public final class TypeHandlerRegistry {
     }
   }
 
+  /**
+   * 一个JavaType只能有一个TypeHandler, 如果有多个, 则不确定返回那个, 直接返回null
+   * sole: 唯一的
+   * pick: 选择, 挑选
+   */
   private TypeHandler<?> pickSoleHandler(Map<JdbcType, TypeHandler<?>> jdbcHandlerMap) {
     TypeHandler<?> soleHandler = null;
     for (TypeHandler<?> handler : jdbcHandlerMap.values()) {
@@ -295,6 +300,7 @@ public final class TypeHandlerRegistry {
         soleHandler = handler;
       } else if (!handler.getClass().equals(soleHandler.getClass())) {
         // More than one type handlers registered.
+        //同一个type有多个TypeHandle, 只返回null,
         return null;
       }
     }
