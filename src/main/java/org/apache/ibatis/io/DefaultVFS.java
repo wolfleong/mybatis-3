@@ -51,7 +51,7 @@ public class DefaultVFS extends VFS {
   }
 
   /**
-   * 递归列出URL下以path开头的所有资源
+   * 递归列出URL下以path开头的所有资源(目录和文件), 有点不明白
    */
   @Override
   public List<String> list(URL url, String path) throws IOException {
