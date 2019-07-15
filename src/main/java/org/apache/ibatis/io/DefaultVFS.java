@@ -70,6 +70,7 @@ public class DefaultVFS extends VFS {
         List<String> children = new ArrayList<>();
         try {
           if (isJar(url)) {
+            //有些非jar文件, 但是实际是个Jar流
             // Some versions of JBoss VFS might give a JAR stream even if the resource
             // referenced by the URL isn't actually a JAR
             is = url.openStream();
@@ -121,6 +122,7 @@ public class DefaultVFS extends VFS {
            * container, because directories can't be opened for reading. If that happens,
            * then list the directory directly instead.
            */
+          //如果是文件目录
           if ("file".equals(url.getProtocol())) {
             File file = new File(url.getFile());
             if (log.isDebugEnabled()) {
@@ -208,6 +210,8 @@ public class DefaultVFS extends VFS {
   }
 
   /**
+   * 返回Jar文件路径
+   *
    * Attempts to deconstruct the given URL to find a JAR file containing the resource referenced
    * by the URL. That is, assuming the URL references a JAR entry, this method will return a URL
    * that references the JAR file containing the entry. If the JAR cannot be located, then this
@@ -222,6 +226,7 @@ public class DefaultVFS extends VFS {
       log.debug("Find JAR URL: " + url);
     }
 
+    //jar:file:/c:/almanac/my.jar!/com/mycompany/MyClass.class 或者file:/c:/almanac/my.jar!/com/mycompany/MyClass.class
     // If the file part of the URL is itself a URL, then that URL probably points to the JAR
     try {
       for (;;) {
@@ -234,6 +239,7 @@ public class DefaultVFS extends VFS {
       // This will happen at some point and serves as a break in the loop
     }
 
+    //file:/c:/almanac/my.jar!/com/mycompany/MyClass.class  => file:/c:/almanac/my.jar 只保留文件名
     // Look for the .jar extension and chop off everything after that
     StringBuilder jarUrl = new StringBuilder(url.toExternalForm());
     int index = jarUrl.lastIndexOf(".jar");
@@ -252,6 +258,7 @@ public class DefaultVFS extends VFS {
 
     // Try to open and test it
     try {
+      //jarUrl = file:///abc/ResourceJar.jar
       URL testUrl = new URL(jarUrl.toString());
       if (isJar(testUrl)) {
         return testUrl;
@@ -262,17 +269,21 @@ public class DefaultVFS extends VFS {
           log.debug("Not a JAR: " + jarUrl);
         }
         jarUrl.replace(0, jarUrl.length(), testUrl.getFile());
+        //replace之后, jarUrl = /abc/ResourceJar.jar
         File file = new File(jarUrl.toString());
 
+        //如果文件不存在, 则可能是被编码过
         // File name might be URL-encoded
         if (!file.exists()) {
           try {
+            //尝试解码
             file = new File(URLEncoder.encode(jarUrl.toString(), "UTF-8"));
           } catch (UnsupportedEncodingException e) {
             throw new RuntimeException("Unsupported encoding?  UTF-8?  That's unpossible.");
           }
         }
 
+        //解码完后, 再判断文件是否存在
         if (file.exists()) {
           if (log.isDebugEnabled()) {
             log.debug("Trying real file: " + file.getAbsolutePath());

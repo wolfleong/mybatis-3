@@ -53,7 +53,7 @@ import org.apache.ibatis.logging.LogFactory;
  * resolver.find(new CustomTest(), pkg2);
  * Collection&lt;ActionBean&gt; beans = resolver.getClasses();
  * </pre>
- *
+ * 获取包下指定父类或指定注解的所有包
  * @author Tim Fennell
  */
 public class ResolverUtil<T> {
