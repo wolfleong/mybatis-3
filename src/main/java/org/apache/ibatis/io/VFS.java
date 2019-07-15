@@ -49,7 +49,7 @@ public abstract class VFS {
     static final VFS INSTANCE = createVFS();
 
     /**
-     * 按照列表的顺序来创建实例, 选择最后一个符合的
+     * 按照列表的顺序来创建实例, 选择最后一个符合的, 默认是DefaultVFS
      */
     @SuppressWarnings("unchecked")
     static VFS createVFS() {

@@ -50,6 +50,9 @@ public class DefaultVFS extends VFS {
     return true;
   }
 
+  /**
+   * 递归列出URL下以path开头的所有资源
+   */
   @Override
   public List<String> list(URL url, String path) throws IOException {
     InputStream is = null;
@@ -169,6 +172,7 @@ public class DefaultVFS extends VFS {
   }
 
   /**
+   * 返回Jar包里面以path开头的文件
    * List the names of the entries in the given {@link JarInputStream} that begin with the
    * specified {@code path}. Entries will match with or without a leading slash.
    *
