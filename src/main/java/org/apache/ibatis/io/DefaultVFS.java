@@ -51,7 +51,7 @@ public class DefaultVFS extends VFS {
   }
 
   /**
-   * 递归列出URL下以path开头的所有资源(目录和文件), 有点不明白
+   * 递归列出URL下以path开头的所有资源(目录和文件), Jar那块有点不明白
    */
   @Override
   public List<String> list(URL url, String path) throws IOException {
@@ -98,7 +98,7 @@ public class DefaultVFS extends VFS {
              * the class loader as a child of the current resource. If any line fails
              * then we assume the current resource is not a directory.
              */
-            //读取class目录时
+            //根据包名获取包下面的类主要走这里, 好神奇
             is = url.openStream();
             BufferedReader reader = new BufferedReader(new InputStreamReader(is));
             List<String> lines = new ArrayList<>();
@@ -126,7 +126,6 @@ public class DefaultVFS extends VFS {
            * container, because directories can't be opened for reading. If that happens,
            * then list the directory directly instead.
            */
-          //如果是文件目录
           if ("file".equals(url.getProtocol())) {
             File file = new File(url.getFile());
             if (log.isDebugEnabled()) {
