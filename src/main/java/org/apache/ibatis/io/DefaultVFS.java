@@ -98,6 +98,7 @@ public class DefaultVFS extends VFS {
              * the class loader as a child of the current resource. If any line fails
              * then we assume the current resource is not a directory.
              */
+            //读取class目录时
             is = url.openStream();
             BufferedReader reader = new BufferedReader(new InputStreamReader(is));
             List<String> lines = new ArrayList<>();
