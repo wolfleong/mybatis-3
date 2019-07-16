@@ -31,6 +31,7 @@ public final class LogFactory {
   private static Constructor<? extends Log> logConstructor;
 
   static {
+    //逐个尝试, 看那个日志实现能初始化logConstructor的就选那个, 初始化的时候会判断非空
     tryImplementation(LogFactory::useSlf4jLogging);
     tryImplementation(LogFactory::useCommonsLogging);
     tryImplementation(LogFactory::useLog4J2Logging);
@@ -88,6 +89,7 @@ public final class LogFactory {
   }
 
   private static void tryImplementation(Runnable runnable) {
+    //只有当logConstructor为null的时候才调用runnable方法来初始化logConstructor, 也就最终只有一个能初始化
     if (logConstructor == null) {
       try {
         runnable.run();
@@ -99,7 +101,9 @@ public final class LogFactory {
 
   private static void setImplementation(Class<? extends Log> implClass) {
     try {
+      //获取日志实现的构造方法, 构造方法带了一个字符串参数
       Constructor<? extends Log> candidate = implClass.getConstructor(String.class);
+      //尝试创建Log对象
       Log log = candidate.newInstance(LogFactory.class.getName());
       if (log.isDebugEnabled()) {
         log.debug("Logging initialized using '" + implClass + "' adapter.");

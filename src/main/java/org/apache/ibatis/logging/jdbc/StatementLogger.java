@@ -48,15 +48,18 @@ public final class StatementLogger extends BaseJdbcLogger implements InvocationH
       }
       if (EXECUTE_METHODS.contains(method.getName())) {
         if (isDebugEnabled()) {
+          //执行查询前, 打印一下sql
           debug(" Executing: " + removeBreakingWhitespace((String) params[0]), true);
         }
         if ("executeQuery".equals(method.getName())) {
+          //如果是查询, 则返回ResultSet的日志代理对象
           ResultSet rs = (ResultSet) method.invoke(statement, params);
           return rs == null ? null : ResultSetLogger.newInstance(rs, statementLog, queryStack);
         } else {
           return method.invoke(statement, params);
         }
       } else if ("getResultSet".equals(method.getName())) {
+        //获取ResultSet时, 返回日志代理对象
         ResultSet rs = (ResultSet) method.invoke(statement, params);
         return rs == null ? null : ResultSetLogger.newInstance(rs, statementLog, queryStack);
       } else {

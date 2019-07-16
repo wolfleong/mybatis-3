@@ -45,17 +45,22 @@ public final class ConnectionLogger extends BaseJdbcLogger implements Invocation
   public Object invoke(Object proxy, Method method, Object[] params)
       throws Throwable {
     try {
+      //忽略Object的方法
       if (Object.class.equals(method.getDeclaringClass())) {
         return method.invoke(this, params);
       }
+      //执行 prepareStatement 方法前, 如果是debug则打印一下sql, param[0]是sql字符串
       if ("prepareStatement".equals(method.getName())) {
         if (isDebugEnabled()) {
           debug(" Preparing: " + removeBreakingWhitespace((String) params[0]), true);
         }
+        //执行方法
         PreparedStatement stmt = (PreparedStatement) method.invoke(connection, params);
+        //返回有日志代理的PreparedStatement
         stmt = PreparedStatementLogger.newInstance(stmt, statementLog, queryStack);
         return stmt;
       } else if ("prepareCall".equals(method.getName())) {
+        //执行 prepareCall 方法前, 如果是debug则打印一下sql, param[0]是sql字符串
         if (isDebugEnabled()) {
           debug(" Preparing: " + removeBreakingWhitespace((String) params[0]), true);
         }

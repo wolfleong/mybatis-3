@@ -38,13 +38,26 @@ import org.apache.ibatis.reflection.ExceptionUtil;
  */
 public final class ResultSetLogger extends BaseJdbcLogger implements InvocationHandler {
 
+  /**
+   * 二进制类型或大对象类型列表
+   */
   private static final Set<Integer> BLOB_TYPES = new HashSet<>();
+  /**
+   * 是否第一行, 如果是则打印列名
+   */
   private boolean first = true;
+  /**
+   * 记录查询结果的条数
+   */
   private int rows;
   private final ResultSet rs;
+  /**
+   * 记录二进制类型或大对象类型的索引, 用于打印具体列的值时用特殊字符代替
+   */
   private final Set<Integer> blobColumns = new HashSet<>();
 
   static {
+    //初始化二进制类型或大对象类型列表
     BLOB_TYPES.add(Types.BINARY);
     BLOB_TYPES.add(Types.BLOB);
     BLOB_TYPES.add(Types.CLOB);
@@ -63,26 +76,36 @@ public final class ResultSetLogger extends BaseJdbcLogger implements InvocationH
   @Override
   public Object invoke(Object proxy, Method method, Object[] params) throws Throwable {
     try {
+      //忽略Object对象的方法
       if (Object.class.equals(method.getDeclaringClass())) {
         return method.invoke(this, params);
       }
       Object o = method.invoke(rs, params);
       if ("next".equals(method.getName())) {
         if ((Boolean) o) {
+          //如果next取到值, 行数加一
           rows++;
+          //如果是trace级别的日志, 记录更加详细的日志
           if (isTraceEnabled()) {
+            //获取元数据
             ResultSetMetaData rsmd = rs.getMetaData();
+            //获取列数
             final int columnCount = rsmd.getColumnCount();
             if (first) {
+              //设置first为非第一行
               first = false;
+              //第一行, 打印列名
               printColumnHeaders(rsmd, columnCount);
             }
+            //打印列的值
             printColumnValues(columnCount);
           }
         } else {
+          //最后一次获取不到值时, 打印sql总条数
           debug("     Total: " + rows, false);
         }
       }
+      //这行不知道想干嘛, 对当前ResultSet的日志没影响
       clearColumnInfo();
       return o;
     } catch (Throwable t) {
@@ -90,21 +113,31 @@ public final class ResultSetLogger extends BaseJdbcLogger implements InvocationH
     }
   }
 
+  /**
+   * 打印列的表头
+   */
   private void printColumnHeaders(ResultSetMetaData rsmd, int columnCount) throws SQLException {
     StringJoiner row = new StringJoiner(", ", "   Columns: ", "");
     for (int i = 1; i <= columnCount; i++) {
+      //记录当前i列是否是BLOB_TYPE类型
       if (BLOB_TYPES.contains(rsmd.getColumnType(i))) {
         blobColumns.add(i);
       }
+      //将列表放到字符串中
       row.add(rsmd.getColumnLabel(i));
     }
+    //打印
     trace(row.toString(), false);
   }
 
+  /**
+   * 打印的值
+   */
   private void printColumnValues(int columnCount) {
     StringJoiner row = new StringJoiner(", ", "       Row: ", "");
     for (int i = 1; i <= columnCount; i++) {
       try {
+        //BLOB_TYPE类型的值不能显示, 用<<BLOB>>来显示
         if (blobColumns.contains(i)) {
           row.add("<<BLOB>>");
         } else {
