@@ -42,21 +42,29 @@ public class MapperRegistry {
 
   @SuppressWarnings("unchecked")
   public <T> T getMapper(Class<T> type, SqlSession sqlSession) {
+    //如果代理对象工厂存在, 则返回, 否则报错
     final MapperProxyFactory<T> mapperProxyFactory = (MapperProxyFactory<T>) knownMappers.get(type);
     if (mapperProxyFactory == null) {
       throw new BindingException("Type " + type + " is not known to the MapperRegistry.");
     }
     try {
+      //代理工厂创建代理对象
       return mapperProxyFactory.newInstance(sqlSession);
     } catch (Exception e) {
       throw new BindingException("Error getting mapper instance. Cause: " + e, e);
     }
   }
 
+  /**
+   * Mapper是否已经存在
+   */
   public <T> boolean hasMapper(Class<T> type) {
     return knownMappers.containsKey(type);
   }
 
+  /**
+   * 增加一个Mapper
+   */
   public <T> void addMapper(Class<T> type) {
     if (type.isInterface()) {
       if (hasMapper(type)) {
@@ -80,6 +88,7 @@ public class MapperRegistry {
   }
 
   /**
+   * 获取所有Mapper class
    * @since 3.2.2
    */
   public Collection<Class<?>> getMappers() {
@@ -99,6 +108,7 @@ public class MapperRegistry {
   }
 
   /**
+   * 根据包名注册Mapper
    * @since 3.2.2
    */
   public void addMappers(String packageName) {
