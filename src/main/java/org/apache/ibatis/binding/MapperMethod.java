@@ -272,17 +272,50 @@ public class MapperMethod {
     }
   }
 
+  /**
+   * 方法签名
+   */
   public static class MethodSignature {
 
+    /**
+     * 返回类型是否为集合
+     */
     private final boolean returnsMany;
+    /**
+     * 是否返回Map
+     */
     private final boolean returnsMap;
+    /**
+     * 反回类型是否为void
+     */
     private final boolean returnsVoid;
+    /**
+     * 返回类型是否{@link org.apache.ibatis.cursor.Cursor}
+     */
     private final boolean returnsCursor;
+    /**
+     * 返回类型是否为Optional
+     */
     private final boolean returnsOptional;
+    /**
+     * 返回的类
+     */
     private final Class<?> returnType;
+    /**
+     * 指定的MapKey, 可为null
+     */
     private final String mapKey;
+    /**
+     * 获得 {@link ResultHandler} 在方法参数中的位置, null代表不存在
+     */
     private final Integer resultHandlerIndex;
+    /**
+     * 获得 {@link RowBounds} 在方法参数中的位置, null代表不存在
+     */
     private final Integer rowBoundsIndex;
+    /**
+     * ParamNameResolver对象
+     */
     private final ParamNameResolver paramNameResolver;
 
     public MethodSignature(Configuration configuration, Class<?> mapperInterface, Method method) {
@@ -300,6 +333,7 @@ public class MapperMethod {
       this.returnsOptional = Optional.class.equals(this.returnType);
       this.mapKey = getMapKey(method);
       this.returnsMap = this.mapKey != null;
+      //获取分页参数的索引
       this.rowBoundsIndex = getUniqueParamIndex(method, RowBounds.class);
       this.resultHandlerIndex = getUniqueParamIndex(method, ResultHandler.class);
       this.paramNameResolver = new ParamNameResolver(configuration, method);
@@ -358,6 +392,9 @@ public class MapperMethod {
       return returnsOptional;
     }
 
+    /**
+     * 遍历方法参数, 获取指定类型的索引值
+     */
     private Integer getUniqueParamIndex(Method method, Class<?> paramType) {
       Integer index = null;
       final Class<?>[] argTypes = method.getParameterTypes();
@@ -366,6 +403,7 @@ public class MapperMethod {
           if (index == null) {
             index = i;
           } else {
+            //如果index不为null, 则表示有重复
             throw new BindingException(method.getName() + " cannot have multiple " + paramType.getSimpleName() + " parameters");
           }
         }
@@ -373,6 +411,9 @@ public class MapperMethod {
       return index;
     }
 
+    /**
+     * 获取方法的MapKey注解的值
+     */
     private String getMapKey(Method method) {
       String mapKey = null;
       if (Map.class.isAssignableFrom(method.getReturnType())) {

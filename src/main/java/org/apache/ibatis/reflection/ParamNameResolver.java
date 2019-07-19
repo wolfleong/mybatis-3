@@ -28,6 +28,9 @@ import org.apache.ibatis.session.Configuration;
 import org.apache.ibatis.session.ResultHandler;
 import org.apache.ibatis.session.RowBounds;
 
+/**
+ * 参数名解析
+ */
 public class ParamNameResolver {
 
   private static final String GENERIC_NAME_PREFIX = "param";
@@ -51,31 +54,40 @@ public class ParamNameResolver {
 
   public ParamNameResolver(Configuration config, Method method) {
     final Class<?>[] paramTypes = method.getParameterTypes();
+    //获取方法参数的所有注解
     final Annotation[][] paramAnnotations = method.getParameterAnnotations();
+    //保存<索引,参数名>的map
     final SortedMap<Integer, String> map = new TreeMap<>();
+    //方法参数的个数
     int paramCount = paramAnnotations.length;
     // get names from @Param annotations
     for (int paramIndex = 0; paramIndex < paramCount; paramIndex++) {
+      //如果是特殊参数, 则过滤掉
       if (isSpecialParameter(paramTypes[paramIndex])) {
         // skip special parameters
         continue;
       }
       String name = null;
+      //遍历具体的注解
       for (Annotation annotation : paramAnnotations[paramIndex]) {
         if (annotation instanceof Param) {
+          //如果有@Param注解在当前参数, 则取注解的值
           hasParamAnnotation = true;
           name = ((Param) annotation).value();
           break;
         }
       }
+      //拿不到名称
       if (name == null) {
         // @Param was not specified.
         if (config.isUseActualParamName()) {
+          //如果允许取实际的参数名做名称的话, 直接获取
           name = getActualParamName(method, paramIndex);
         }
         if (name == null) {
           // use the parameter index as the name ("0", "1", ...)
           // gcode issue #71
+          //实在没有, 则用索引名做参数名
           name = String.valueOf(map.size());
         }
       }
@@ -88,6 +100,9 @@ public class ParamNameResolver {
     return ParamNameUtil.getParamNames(method).get(paramIndex);
   }
 
+  /**
+   * 特殊的参数, RowBounds 和 ResultHandler
+   */
   private static boolean isSpecialParameter(Class<?> clazz) {
     return RowBounds.class.isAssignableFrom(clazz) || ResultHandler.class.isAssignableFrom(clazz);
   }
@@ -112,6 +127,7 @@ public class ParamNameResolver {
     if (args == null || paramCount == 0) {
       return null;
     } else if (!hasParamAnnotation && paramCount == 1) {
+      //没有注解, 且参数只有一个
       return args[names.firstKey()];
     } else {
       final Map<String, Object> param = new ParamMap<>();
@@ -121,6 +137,7 @@ public class ParamNameResolver {
         // add generic param names (param1, param2, ...)
         final String genericParamName = GENERIC_NAME_PREFIX + String.valueOf(i + 1);
         // ensure not to overwrite parameter named with @Param
+        //如果名称里没有通用的参数名, 则将通用的参数名放到参数中
         if (!names.containsValue(genericParamName)) {
           param.put(genericParamName, args[entry.getKey()]);
         }
