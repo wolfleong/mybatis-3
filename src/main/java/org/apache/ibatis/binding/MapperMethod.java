@@ -235,6 +235,9 @@ public class MapperMethod {
 
   }
 
+  /**
+   * Sql命令的封装, 主要是id和执行的类型
+   */
   public static class SqlCommand {
 
     private final String name;
@@ -243,6 +246,7 @@ public class MapperMethod {
     public SqlCommand(Configuration configuration, Class<?> mapperInterface, Method method) {
       final String methodName = method.getName();
       final Class<?> declaringClass = method.getDeclaringClass();
+      //找MappedStatement
       MappedStatement ms = resolveMappedStatement(mapperInterface, methodName, declaringClass,
           configuration);
       if (ms == null) {
