@@ -39,6 +39,10 @@ import org.apache.ibatis.session.RowBounds;
 import org.apache.ibatis.session.SqlSession;
 
 /**
+ * 主要做的是, 根据全类名和方法名, 获MapperStatement, 根据不同的执行类型调用不同的方法, 再根据返回的类型转换成接口方法返回的类型
+ * 1 选择那些执行方法, insert, update, delete, select等
+ * 2 查询时根据参数是否有分页参数, 控制是否调用有分页的select
+ * 3 将返回值转换成方法的真证的返回值
  * @author Clinton Begin
  * @author Eduardo Macarron
  * @author Lasse Voss
