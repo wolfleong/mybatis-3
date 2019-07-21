@@ -27,6 +27,7 @@ import org.apache.ibatis.session.Configuration;
 import org.apache.ibatis.session.SqlSession;
 
 /**
+ * Mapper的注册器, 主要存着Mapper的代理工厂
  * @author Clinton Begin
  * @author Eduardo Macarron
  * @author Lasse Voss
@@ -40,6 +41,9 @@ public class MapperRegistry {
     this.config = config;
   }
 
+  /**
+   * 先获取Mapper的代理工厂, 再工厂创建代理对象
+   */
   @SuppressWarnings("unchecked")
   public <T> T getMapper(Class<T> type, SqlSession sqlSession) {
     //如果代理对象工厂存在, 则返回, 否则报错
