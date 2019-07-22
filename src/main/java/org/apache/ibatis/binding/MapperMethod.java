@@ -51,7 +51,13 @@ import org.apache.ibatis.session.SqlSession;
  */
 public class MapperMethod {
 
+  /**
+   * Sql命令的封装
+   */
   private final SqlCommand command;
+  /**
+   * 方法属性的封装
+   */
   private final MethodSignature method;
 
   public MapperMethod(Class<?> mapperInterface, Method method, Configuration config) {
@@ -384,6 +390,9 @@ public class MapperMethod {
       this.paramNameResolver = new ParamNameResolver(configuration, method);
     }
 
+    /**
+     * 将实际参数转换成sql命令的参数
+     */
     public Object convertArgsToSqlCommandParam(Object[] args) {
       return paramNameResolver.getNamedParams(args);
     }

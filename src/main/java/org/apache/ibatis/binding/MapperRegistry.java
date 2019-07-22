@@ -33,8 +33,13 @@ import org.apache.ibatis.session.SqlSession;
  * @author Lasse Voss
  */
 public class MapperRegistry {
-
+  /**
+   * mybatis的全局配置文件
+   */
   private final Configuration config;
+  /**
+   * 保存已经注册的MapperProxy工厂
+   */
   private final Map<Class<?>, MapperProxyFactory<?>> knownMappers = new HashMap<>();
 
   public MapperRegistry(Configuration config) {
