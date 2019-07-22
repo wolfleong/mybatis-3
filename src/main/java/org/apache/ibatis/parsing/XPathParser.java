@@ -40,15 +40,30 @@ import org.xml.sax.SAXException;
 import org.xml.sax.SAXParseException;
 
 /**
+ * XPath解析器
  * @author Clinton Begin
  * @author Kazuki Shimizu
  */
 public class XPathParser {
-
+  /**
+   * XML Document对象, XML被解析之后, 生成Document对象
+   */
   private final Document document;
+  /**
+   * 是否校验xml, 一般情况下值为true
+   */
   private boolean validation;
+  /**
+   * xml解析实体, 自定义EntityResolver为了使用本地的DTD文件做校验
+   */
   private EntityResolver entityResolver;
+  /**
+   * 变量配置, 用来替换动态配置的属性值, 可以在Java Properties文件中配置或使用Mybatis的<property/>来配置
+   */
   private Properties variables;
+  /**
+   * Java XPath对象
+   */
   private XPath xpath;
 
   public XPathParser(String xml) {
@@ -229,7 +244,9 @@ public class XPathParser {
   private Document createDocument(InputSource inputSource) {
     // important: this must only be called AFTER common constructor
     try {
+      //创建DocumentBuilderFactory对象
       DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+      //设置是否校验XML
       factory.setValidating(validation);
 
       factory.setNamespaceAware(false);
@@ -238,8 +255,11 @@ public class XPathParser {
       factory.setCoalescing(false);
       factory.setExpandEntityReferences(true);
 
+      //用Factory创建DocumentBuilder对象
       DocumentBuilder builder = factory.newDocumentBuilder();
+      //设置实体解析器
       builder.setEntityResolver(entityResolver);
+      //设置空的错误处理器
       builder.setErrorHandler(new ErrorHandler() {
         @Override
         public void error(SAXParseException exception) throws SAXException {
@@ -255,6 +275,7 @@ public class XPathParser {
         public void warning(SAXParseException exception) throws SAXException {
         }
       });
+      //解析xml文件
       return builder.parse(inputSource);
     } catch (Exception e) {
       throw new BuilderException("Error creating document instance.  Cause: " + e, e);
@@ -265,6 +286,7 @@ public class XPathParser {
     this.validation = validation;
     this.entityResolver = entityResolver;
     this.variables = variables;
+    //用XPathFactory来创建一个XPath对象
     XPathFactory factory = XPathFactory.newInstance();
     this.xpath = factory.newXPath();
   }
