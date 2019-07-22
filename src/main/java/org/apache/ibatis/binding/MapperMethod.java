@@ -40,9 +40,10 @@ import org.apache.ibatis.session.SqlSession;
 
 /**
  * 主要做的是, 根据全类名和方法名, 获MapperStatement, 根据不同的执行类型调用不同的方法, 再根据返回的类型转换成接口方法返回的类型
- * 1 选择那些执行方法, insert, update, delete, select等
+ * 1 根据执行类型选择那些执行方法, insert, update, delete, select等
  * 2 查询时根据参数是否有分页参数, 控制是否调用有分页的select
- * 3 将返回值转换成方法的真证的返回值
+ * 3 将返回值转换成方法的真正的返回值,
+ * 4 根据不同的返回类型, 调用不同的select方法
  * @author Clinton Begin
  * @author Eduardo Macarron
  * @author Lasse Voss
@@ -77,6 +78,7 @@ public class MapperMethod {
         break;
       }
       case SELECT:
+        //没返回值, 但是有处理器
         if (method.returnsVoid() && method.hasResultHandler()) {
           executeWithResultHandler(sqlSession, args);
           result = null;
@@ -138,6 +140,7 @@ public class MapperMethod {
 
   private void executeWithResultHandler(SqlSession sqlSession, Object[] args) {
     MappedStatement ms = sqlSession.getConfiguration().getMappedStatement(command.getName());
+    //如果不是存储过程且没有返回值则不能用ResultHandler
     if (!StatementType.CALLABLE.equals(ms.getStatementType())
         && void.class.equals(ms.getResultMaps().get(0).getType())) {
       throw new BindingException("method " + command.getName()
@@ -213,6 +216,9 @@ public class MapperMethod {
     }
   }
 
+  /**
+   * 查询Map结果
+   */
   private <K, V> Map<K, V> executeForMap(SqlSession sqlSession, Object[] args) {
     Map<K, V> result;
     Object param = method.convertArgsToSqlCommandParam(args);
@@ -247,6 +253,9 @@ public class MapperMethod {
     private final String name;
     private final SqlCommandType type;
 
+    /**
+     * 根据id查询MappedStatement, 再返回MappedStatement的类型
+     */
     public SqlCommand(Configuration configuration, Class<?> mapperInterface, Method method) {
       final String methodName = method.getName();
       final Class<?> declaringClass = method.getDeclaringClass();

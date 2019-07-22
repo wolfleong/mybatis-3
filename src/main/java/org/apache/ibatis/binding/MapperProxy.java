@@ -32,8 +32,17 @@ import org.apache.ibatis.session.SqlSession;
 public class MapperProxy<T> implements InvocationHandler, Serializable {
 
   private static final long serialVersionUID = -6424540398559729838L;
+  /**
+   * sql会话
+   */
   private final SqlSession sqlSession;
+  /**
+   * Mapper接口
+   */
   private final Class<T> mapperInterface;
+  /**
+   * 方法缓存
+   */
   private final Map<Method, MapperMethod> methodCache;
 
   public MapperProxy(SqlSession sqlSession, Class<T> mapperInterface, Map<Method, MapperMethod> methodCache) {
@@ -45,15 +54,19 @@ public class MapperProxy<T> implements InvocationHandler, Serializable {
   @Override
   public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
     try {
+      //执行对象方法
       if (Object.class.equals(method.getDeclaringClass())) {
         return method.invoke(this, args);
+        //执行java8的默认方法
       } else if (method.isDefault()) {
         return invokeDefaultMethod(proxy, method, args);
       }
     } catch (Throwable t) {
       throw ExceptionUtil.unwrapThrowable(t);
     }
+    //从缓存中获取MapperMethod, 如果不存在则加入缓存
     final MapperMethod mapperMethod = cachedMapperMethod(method);
+    //执行方法
     return mapperMethod.execute(sqlSession, args);
   }
 
