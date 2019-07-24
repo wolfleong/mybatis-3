@@ -155,7 +155,9 @@ public class XPathParser {
   }
 
   public String evalString(Object root, String expression) {
+    //获得表达式的值
     String result = (String) evaluate(expression, root, XPathConstants.STRING);
+    //基于 variables 变量替换动态值, 如果result为动态值的话
     result = PropertyParser.parse(result, variables);
     return result;
   }
@@ -212,6 +214,9 @@ public class XPathParser {
     return evalNodes(document, expression);
   }
 
+  /**
+   * 获取Node数组
+   */
   public List<XNode> evalNodes(Object root, String expression) {
     List<XNode> xnodes = new ArrayList<>();
     NodeList nodes = (NodeList) evaluate(expression, root, XPathConstants.NODESET);
@@ -225,14 +230,26 @@ public class XPathParser {
     return evalNode(document, expression);
   }
 
+  /**
+   * 返回XNode节点
+   */
   public XNode evalNode(Object root, String expression) {
+    //获取Node节点
     Node node = (Node) evaluate(expression, root, XPathConstants.NODE);
     if (node == null) {
       return null;
     }
+    //将Node封装成XNode对象
     return new XNode(this, node, variables);
   }
 
+  /**
+   * 获取指定元素的值
+   * @param expression 表达式
+   * @param root 指定节点
+   * @param returnType 返回类型
+   * @return 值
+   */
   private Object evaluate(String expression, Object root, QName returnType) {
     try {
       return xpath.evaluate(expression, root, returnType);
