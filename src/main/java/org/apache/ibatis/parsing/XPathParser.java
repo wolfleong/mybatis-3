@@ -40,7 +40,7 @@ import org.xml.sax.SAXException;
 import org.xml.sax.SAXParseException;
 
 /**
- * XPath解析器
+ * XPath解析器, 对XPath解析的封装
  * @author Clinton Begin
  * @author Kazuki Shimizu
  */

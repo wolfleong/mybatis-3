@@ -17,6 +17,7 @@ package org.apache.ibatis.parsing;
 
 /**
  * 通用的token解析器, 每解析完一个token则用TokenHandler来处理一下, 再拼接回原来的字符串返回
+ * 主要用于处理动态sql的占位符
  * @author Clinton Begin
  */
 public class GenericTokenParser {
