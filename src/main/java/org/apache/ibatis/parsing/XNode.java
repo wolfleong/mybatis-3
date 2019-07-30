@@ -52,6 +52,7 @@ public class XNode {
   }
 
   public XNode getParent() {
+    //获取父节点, 并且封成XNode
     Node parent = node.getParentNode();
     if (!(parent instanceof Element)) {
       return null;
@@ -61,6 +62,7 @@ public class XNode {
   }
 
   public String getPath() {
+    //用节点名拼接成Path路径
     StringBuilder builder = new StringBuilder();
     Node current = node;
     while (current instanceof Element) {
@@ -80,6 +82,7 @@ public class XNode {
       if (current != this) {
         builder.insert(0, "_");
       }
+      //按id, value, property等顺序找, 找到就返回, 都没找到返回null
       String value = current.getStringAttribute("id",
           current.getStringAttribute("value",
               current.getStringAttribute("property", null)));
@@ -363,6 +366,7 @@ public class XNode {
   private String parseBody(Node node) {
     String data = getBodyData(node);
     if (data == null) {
+      //如果没找到文本, 则找子节点的文本, 直到找到为止
       NodeList children = node.getChildNodes();
       for (int i = 0; i < children.getLength(); i++) {
         Node child = children.item(i);
@@ -375,7 +379,11 @@ public class XNode {
     return data;
   }
 
+  /**
+   * 获取Node节点的文本, 并替换掉动态属性
+   */
   private String getBodyData(Node child) {
+    //如果是CDATA或者是文本
     if (child.getNodeType() == Node.CDATA_SECTION_NODE
         || child.getNodeType() == Node.TEXT_NODE) {
       String data = ((CharacterData) child).getData();
