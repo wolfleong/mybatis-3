@@ -32,7 +32,13 @@ import org.w3c.dom.NodeList;
 public class XNode {
 
   private final Node node;
+  /**
+   * 节点的名称
+   */
   private final String name;
+  /**
+   * 节点包含的文本
+   */
   private final String body;
   private final Properties attributes;
   private final Properties variables;
@@ -43,6 +49,7 @@ public class XNode {
     this.node = node;
     this.name = node.getNodeName();
     this.variables = variables;
+    //记录节点的属性名和值
     this.attributes = parseAttributes(node);
     this.body = parseBody(node);
   }
@@ -290,6 +297,9 @@ public class XNode {
     }
   }
 
+  /**
+   * 获取子节点
+   */
   public List<XNode> getChildren() {
     List<XNode> children = new ArrayList<>();
     NodeList nodeList = node.getChildNodes();
@@ -304,6 +314,9 @@ public class XNode {
     return children;
   }
 
+  /**
+   * 将子节点的属性(name,value)的值返回
+   */
   public Properties getChildrenAsProperties() {
     Properties properties = new Properties();
     for (XNode child : getChildren()) {
@@ -356,13 +369,18 @@ public class XNode {
     if (attributeNodes != null) {
       for (int i = 0; i < attributeNodes.getLength(); i++) {
         Node attribute = attributeNodes.item(i);
+        //属性值进行动态替换
         String value = PropertyParser.parse(attribute.getNodeValue(), variables);
+        //缓存
         attributes.put(attribute.getNodeName(), value);
       }
     }
     return attributes;
   }
 
+  /**
+   * 找节点的文本
+   */
   private String parseBody(Node node) {
     String data = getBodyData(node);
     if (data == null) {
@@ -370,6 +388,7 @@ public class XNode {
       NodeList children = node.getChildNodes();
       for (int i = 0; i < children.getLength(); i++) {
         Node child = children.item(i);
+        //找子节点的文本
         data = getBodyData(child);
         if (data != null) {
           break;
