@@ -29,9 +29,13 @@ import org.apache.ibatis.type.TypeHandler;
 import org.apache.ibatis.type.TypeHandlerRegistry;
 
 /**
+ * 基础构造器的抽象类, 为子类提供通用操作
  * @author Clinton Begin
  */
 public abstract class BaseBuilder {
+  /**
+   * 全局配置对象
+   */
   protected final Configuration configuration;
   protected final TypeAliasRegistry typeAliasRegistry;
   protected final TypeHandlerRegistry typeHandlerRegistry;
@@ -46,6 +50,9 @@ public abstract class BaseBuilder {
     return configuration;
   }
 
+  /**
+   * 处理有默认值的正则
+   */
   protected Pattern parseExpression(String regex, String defaultValue) {
     return Pattern.compile(regex == null ? defaultValue : regex);
   }
@@ -58,11 +65,17 @@ public abstract class BaseBuilder {
     return value == null ? defaultValue : Integer.valueOf(value);
   }
 
+  /**
+   * 解析逗号分割的列表为set
+   */
   protected Set<String> stringSetValueOf(String value, String defaultValue) {
     value = value == null ? defaultValue : value;
     return new HashSet<>(Arrays.asList(value.split(",")));
   }
 
+  /**
+   * 字符串变 JdbcType enum
+   */
   protected JdbcType resolveJdbcType(String alias) {
     if (alias == null) {
       return null;
@@ -74,6 +87,9 @@ public abstract class BaseBuilder {
     }
   }
 
+  /**
+   * 字符串变 ResultSetType enum
+   */
   protected ResultSetType resolveResultSetType(String alias) {
     if (alias == null) {
       return null;
@@ -96,6 +112,9 @@ public abstract class BaseBuilder {
     }
   }
 
+  /**
+   * 用类的默认构造器创建类
+   */
   protected Object createInstance(String alias) {
     Class<?> clazz = resolveClass(alias);
     if (clazz == null) {
@@ -108,6 +127,9 @@ public abstract class BaseBuilder {
     }
   }
 
+  /**
+   * 字符串变类, 这个字符串有可能是别名, 有可能是全类名
+   */
   protected <T> Class<? extends T> resolveClass(String alias) {
     if (alias == null) {
       return null;
@@ -119,10 +141,14 @@ public abstract class BaseBuilder {
     }
   }
 
+  /**
+   * 解析 typeHandlerAlias 这个字符串为类, 且获取这个类型实例
+   */
   protected TypeHandler<?> resolveTypeHandler(Class<?> javaType, String typeHandlerAlias) {
     if (typeHandlerAlias == null) {
       return null;
     }
+    //解析 typeHandlerAlias 为类
     Class<?> type = resolveClass(typeHandlerAlias);
     if (type != null && !TypeHandler.class.isAssignableFrom(type)) {
       throw new BuilderException("Type " + type.getName() + " is not a valid TypeHandler because it does not implement TypeHandler interface");
@@ -132,13 +158,18 @@ public abstract class BaseBuilder {
     return resolveTypeHandler(javaType, typeHandlerType);
   }
 
+  /**
+   * typeHandlerType这个类去TypeHandler拿, 如果没有拿到, 则创建一个
+   */
   protected TypeHandler<?> resolveTypeHandler(Class<?> javaType, Class<? extends TypeHandler<?>> typeHandlerType) {
     if (typeHandlerType == null) {
       return null;
     }
+    //从注册器里面拿
     // javaType ignored for injected handlers see issue #746 for full detail
     TypeHandler<?> handler = typeHandlerRegistry.getMappingTypeHandler(typeHandlerType);
     if (handler == null) {
+      //如果没有注册, 则创建一个
       // not in registry, create a new one
       handler = typeHandlerRegistry.getInstance(javaType, typeHandlerType);
     }

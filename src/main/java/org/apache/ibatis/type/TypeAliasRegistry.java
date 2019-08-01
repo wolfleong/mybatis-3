@@ -37,6 +37,9 @@ import org.apache.ibatis.io.Resources;
  */
 public class TypeAliasRegistry {
 
+  /**
+   * 类型别名映射关系
+   */
   private final Map<String, Class<?>> typeAliases = new HashMap<>();
 
   public TypeAliasRegistry() {
@@ -104,15 +107,19 @@ public class TypeAliasRegistry {
   // throws class cast exception as well if types cannot be assigned
   public <T> Class<T> resolveAlias(String string) {
     try {
+      //如果字符串为null, 直接返回null
       if (string == null) {
         return null;
       }
+      //变小写
       // issue #748
       String key = string.toLowerCase(Locale.ENGLISH);
       Class<T> value;
       if (typeAliases.containsKey(key)) {
+        //如果包含, 则获取返回
         value = (Class<T>) typeAliases.get(key);
       } else {
+        //没有包含, 则表示这字符串是类的全称
         value = (Class<T>) Resources.classForName(string);
       }
       return value;
@@ -138,6 +145,9 @@ public class TypeAliasRegistry {
     }
   }
 
+  /**
+   * 用类注册的时候, 如果类上有@Alias注解, 则用注解上的值做别名, 否则用类的getSimpleName()来做别名
+   */
   public void registerAlias(Class<?> type) {
     String alias = type.getSimpleName();
     Alias aliasAnnotation = type.getAnnotation(Alias.class);
@@ -147,10 +157,14 @@ public class TypeAliasRegistry {
     registerAlias(alias, type);
   }
 
+  /**
+   * 给类注册别名
+   */
   public void registerAlias(String alias, Class<?> value) {
     if (alias == null) {
       throw new TypeException("The parameter alias cannot be null");
     }
+    //别名都是小写的
     // issue #748
     String key = alias.toLowerCase(Locale.ENGLISH);
     if (typeAliases.containsKey(key) && typeAliases.get(key) != null && !typeAliases.get(key).equals(value)) {

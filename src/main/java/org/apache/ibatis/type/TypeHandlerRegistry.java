@@ -463,8 +463,10 @@ public final class TypeHandlerRegistry {
 
   @SuppressWarnings("unchecked")
   public <T> TypeHandler<T> getInstance(Class<?> javaTypeClass, Class<?> typeHandlerClass) {
+    //创建TypeHandler实例, 如果javaTypeClass不为null, 则为typeHandler为enum类型
     if (javaTypeClass != null) {
       try {
+        //获取带参数类型的构造器, enum的TypeHandler
         Constructor<?> c = typeHandlerClass.getConstructor(Class.class);
         return (TypeHandler<T>) c.newInstance(javaTypeClass);
       } catch (NoSuchMethodException ignored) {
@@ -474,6 +476,7 @@ public final class TypeHandlerRegistry {
       }
     }
     try {
+      //普通的TypeHandler
       Constructor<?> c = typeHandlerClass.getConstructor();
       return (TypeHandler<T>) c.newInstance();
     } catch (Exception e) {
