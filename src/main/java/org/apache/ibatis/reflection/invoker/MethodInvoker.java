@@ -21,6 +21,7 @@ import java.lang.reflect.Method;
 import org.apache.ibatis.reflection.Reflector;
 
 /**
+ * 方法反射执行的封装, 代理模式
  * @author Clinton Begin
  */
 public class MethodInvoker implements Invoker {
@@ -31,9 +32,11 @@ public class MethodInvoker implements Invoker {
   public MethodInvoker(Method method) {
     this.method = method;
 
+    //如果是setter, 则获取参数类型
     if (method.getParameterTypes().length == 1) {
       type = method.getParameterTypes()[0];
     } else {
+      //如果是getter, 则获取方法返回值
       type = method.getReturnType();
     }
   }
@@ -41,8 +44,10 @@ public class MethodInvoker implements Invoker {
   @Override
   public Object invoke(Object target, Object[] args) throws IllegalAccessException, InvocationTargetException {
     try {
+      //执行方法
       return method.invoke(target, args);
     } catch (IllegalAccessException e) {
+      //如果不可方法, 设置允许访问再执行方法
       if (Reflector.canControlMemberAccessible()) {
         method.setAccessible(true);
         return method.invoke(target, args);
