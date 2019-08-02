@@ -51,7 +51,7 @@ public abstract class BaseBuilder {
   }
 
   /**
-   * 处理有默认值的正则
+   * 创建有默认值的正则表达式
    */
   protected Pattern parseExpression(String regex, String defaultValue) {
     return Pattern.compile(regex == null ? defaultValue : regex);
@@ -101,6 +101,9 @@ public abstract class BaseBuilder {
     }
   }
 
+  /**
+   * 解析字符串为 ParameterMode enum
+   */
   protected ParameterMode resolveParameterMode(String alias) {
     if (alias == null) {
       return null;
@@ -113,7 +116,7 @@ public abstract class BaseBuilder {
   }
 
   /**
-   * 用类的默认构造器创建类
+   * 用类的默认构造器创建对象
    */
   protected Object createInstance(String alias) {
     Class<?> clazz = resolveClass(alias);
