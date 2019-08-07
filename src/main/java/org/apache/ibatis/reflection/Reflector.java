@@ -281,6 +281,7 @@ public class Reflector {
         result = Array.newInstance((Class<?>) componentType, 0).getClass();
       } else {
         //如果 componentType 还是Type类型(ParameterizedType, TypeVariable, GenericArrayType, WildcardType), 则继续解析
+        //如果 componentType 是List<String>, 最终得到的componentClass是List
         Class<?> componentClass = typeToClass(componentType);
         //创建这个类型的数组的class
         result = Array.newInstance(componentClass, 0).getClass();
