@@ -26,6 +26,7 @@ import java.lang.reflect.WildcardType;
 import java.util.Arrays;
 
 /**
+ * 这个类的作用主要是将解析一些带泛型参数类型的变成具体真正的类型返回
  * @author Iwao AVE!
  */
 public class TypeParameterResolver {
