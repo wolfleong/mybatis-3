@@ -19,6 +19,7 @@ import java.util.List;
 import java.util.Properties;
 
 /**
+ * 对象工厂, 用于创建对象
  * MyBatis uses an ObjectFactory to create all needed new Objects.
  *
  * @author Clinton Begin
@@ -34,6 +35,7 @@ public interface ObjectFactory {
   }
 
   /**
+   * 用默认构造函数创建对象
    * Creates a new object with default constructor.
    * @param type Object type
    * @return
@@ -41,6 +43,7 @@ public interface ObjectFactory {
   <T> T create(Class<T> type);
 
   /**
+   * 指定参数类型, 指定参数创建对象
    * Creates a new object with the specified constructor and params.
    * @param type Object type
    * @param constructorArgTypes Constructor argument types
@@ -50,6 +53,7 @@ public interface ObjectFactory {
   <T> T create(Class<T> type, List<Class<?>> constructorArgTypes, List<Object> constructorArgs);
 
   /**
+   * 是否为集合类型
    * Returns true if this object can have a set of other objects.
    * It's main purpose is to support non-java.util.Collection objects like Scala collections.
    *

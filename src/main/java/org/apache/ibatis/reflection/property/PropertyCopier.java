@@ -20,6 +20,7 @@ import java.lang.reflect.Field;
 import org.apache.ibatis.reflection.Reflector;
 
 /**
+ * 属性复制器
  * @author Clinton Begin
  */
 public final class PropertyCopier {
