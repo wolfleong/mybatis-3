@@ -96,39 +96,56 @@ public class TypeParameterResolver {
     Type componentType = genericArrayType.getGenericComponentType();
     Type resolvedComponentType = null;
     if (componentType instanceof TypeVariable) {
+      //T[]
       resolvedComponentType = resolveTypeVar((TypeVariable<?>) componentType, srcType, declaringClass);
     } else if (componentType instanceof GenericArrayType) {
+      //todo 这种情况我也想不出来, 泛型数组的泛型数组是什么鬼
       resolvedComponentType = resolveGenericArrayType((GenericArrayType) componentType, srcType, declaringClass);
     } else if (componentType instanceof ParameterizedType) {
+      //List<T>[] 或 List<String>[]
       resolvedComponentType = resolveParameterizedType((ParameterizedType) componentType, srcType, declaringClass);
     }
+    //如果是普通的Class类型, 则返回
     if (resolvedComponentType instanceof Class) {
       return Array.newInstance((Class<?>) resolvedComponentType, 0).getClass();
     } else {
+      //如果是带泛型参数的话, 直接创建个泛型数组
       return new GenericArrayTypeImpl(resolvedComponentType);
     }
   }
 
   private static ParameterizedType resolveParameterizedType(ParameterizedType parameterizedType, Type srcType, Class<?> declaringClass) {
+    //获取parameterizedType的原类型
     Class<?> rawType = (Class<?>) parameterizedType.getRawType();
+    //获取泛型参数列表
     Type[] typeArgs = parameterizedType.getActualTypeArguments();
     Type[] args = new Type[typeArgs.length];
     for (int i = 0; i < typeArgs.length; i++) {
+      //如果是TypeVariable
       if (typeArgs[i] instanceof TypeVariable) {
         args[i] = resolveTypeVar((TypeVariable<?>) typeArgs[i], srcType, declaringClass);
+        //如果是参数泛型
       } else if (typeArgs[i] instanceof ParameterizedType) {
         args[i] = resolveParameterizedType((ParameterizedType) typeArgs[i], srcType, declaringClass);
+        //如果是通配符类型
       } else if (typeArgs[i] instanceof WildcardType) {
         args[i] = resolveWildcardType((WildcardType) typeArgs[i], srcType, declaringClass);
       } else {
+        //class类型
         args[i] = typeArgs[i];
       }
     }
     return new ParameterizedTypeImpl(rawType, null, args);
   }
 
+  /**
+   *  主要用于确定A的实际类型
+   *  List<? extend A & C>
+   */
   private static Type resolveWildcardType(WildcardType wildcardType, Type srcType, Class<?> declaringClass) {
+    //获取通配符下边界
     Type[] lowerBounds = resolveWildcardTypeBounds(wildcardType.getLowerBounds(), srcType, declaringClass);
+    //获取通配符上边界
     Type[] upperBounds = resolveWildcardTypeBounds(wildcardType.getUpperBounds(), srcType, declaringClass);
     return new WildcardTypeImpl(lowerBounds, upperBounds);
   }
@@ -137,10 +154,13 @@ public class TypeParameterResolver {
     Type[] result = new Type[bounds.length];
     for (int i = 0; i < bounds.length; i++) {
       if (bounds[i] instanceof TypeVariable) {
+        //List<? extends E>
         result[i] = resolveTypeVar((TypeVariable<?>) bounds[i], srcType, declaringClass);
       } else if (bounds[i] instanceof ParameterizedType) {
+        //List<? extends List<String>>
         result[i] = resolveParameterizedType((ParameterizedType) bounds[i], srcType, declaringClass);
       } else if (bounds[i] instanceof WildcardType) {
+        //todo List<? extends ?> , 不懂, 想不出来什么例子
         result[i] = resolveWildcardType((WildcardType) bounds[i], srcType, declaringClass);
       } else {
         result[i] = bounds[i];
