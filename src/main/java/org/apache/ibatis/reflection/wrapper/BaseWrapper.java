@@ -36,7 +36,7 @@ public abstract class BaseWrapper implements ObjectWrapper {
   }
 
   /**
-   * 获取指定属性的对象
+   * 获取指定属性的集合对象
    */
   protected Object resolveCollection(PropertyTokenizer prop, Object object) {
     if ("".equals(prop.getName())) {
@@ -47,7 +47,7 @@ public abstract class BaseWrapper implements ObjectWrapper {
   }
 
   /**
-   * 获取集合的值, map, 列表, 或数组
+   * 根据索引和集合对象, 获取集合对象中的值
    */
   protected Object getCollectionValue(PropertyTokenizer prop, Object collection) {
     if (collection instanceof Map) {
@@ -81,7 +81,7 @@ public abstract class BaseWrapper implements ObjectWrapper {
   }
 
   /**
-   * 设置集合的值, Map或者列表或者数组
+   * 根据集合对象, 值, 和索引, 将值设置对集合对象的指定索引中
    */
   protected void setCollectionValue(PropertyTokenizer prop, Object collection, Object value) {
     if (collection instanceof Map) {

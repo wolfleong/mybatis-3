@@ -40,22 +40,36 @@ public class BeanWrapper extends BaseWrapper {
     this.metaClass = MetaClass.forClass(object.getClass(), metaObject.getReflectorFactory());
   }
 
+  /**
+   * 获取属性的值对象
+   */
   @Override
   public Object get(PropertyTokenizer prop) {
+    //如果index不为null, 则表示要获取的是集合对象
     if (prop.getIndex() != null) {
+      //先获取集合对象
       Object collection = resolveCollection(prop, object);
+      //再获取集合对象中指定索引的值
       return getCollectionValue(prop, collection);
     } else {
+      //如果不是集合对象, 则直接获取Bean属性的值
       return getBeanProperty(prop, object);
     }
   }
 
+  /**
+   * 设置指定属性的值对象
+   */
   @Override
   public void set(PropertyTokenizer prop, Object value) {
+    //如果索引不null
     if (prop.getIndex() != null) {
+      //先获取对应属性的集合对象
       Object collection = resolveCollection(prop, object);
+      //再将值按索引设置到集合对象中
       setCollectionValue(prop, collection, value);
     } else {
+      //没有索引, 则是设置Bean对象的属性值
       setBeanProperty(prop, object, value);
     }
   }
@@ -157,10 +171,18 @@ public class BeanWrapper extends BaseWrapper {
     return metaValue;
   }
 
+  /**
+   * 根据属性和对象, 获取对象中属性的值
+   * @param prop
+   * @param object
+   * @return
+   */
   private Object getBeanProperty(PropertyTokenizer prop, Object object) {
     try {
+      //获取Getter方法的反射
       Invoker method = metaClass.getGetInvoker(prop.getName());
       try {
+        //对过反射执行Getter方法, 获得返回值
         return method.invoke(object, NO_ARGUMENTS);
       } catch (Throwable t) {
         throw ExceptionUtil.unwrapThrowable(t);
@@ -174,9 +196,12 @@ public class BeanWrapper extends BaseWrapper {
 
   private void setBeanProperty(PropertyTokenizer prop, Object object, Object value) {
     try {
+      //获取Setter方法反射
       Invoker method = metaClass.getSetInvoker(prop.getName());
+      //拼接参数
       Object[] params = {value};
       try {
+        //执行setter方法
         method.invoke(object, params);
       } catch (Throwable t) {
         throw ExceptionUtil.unwrapThrowable(t);

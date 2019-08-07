@@ -23,6 +23,9 @@ import java.util.Iterator;
  */
 public class PropertyTokenizer implements Iterator<PropertyTokenizer> {
   private String name;
+  /**
+   * 带索引的属性名
+   */
   private final String indexedName;
   private String index;
   private final String children;
