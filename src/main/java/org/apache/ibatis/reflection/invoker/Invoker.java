@@ -18,6 +18,7 @@ package org.apache.ibatis.reflection.invoker;
 import java.lang.reflect.InvocationTargetException;
 
 /**
+ * 方法执行或获取字段值反射接口
  * @author Clinton Begin
  */
 public interface Invoker {
