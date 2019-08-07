@@ -81,7 +81,7 @@ public class Reflector {
    */
   private Constructor<?> defaultConstructor;
   /**
-   * 不分大小写的属性集合
+   * 不分大小写的属性集合, key为不分大小写的属性名, value为真正的属性名
    */
   private Map<String, String> caseInsensitivePropertyMap = new HashMap<>();
 
@@ -257,21 +257,37 @@ public class Reflector {
     }
   }
 
+  /**
+   * 将可能带泛型参数的Type类型(Class, ParameterizedType, TypeVariable, GenericArrayType, WildcardType)转换成原始类型(Class)
+   */
   private Class<?> typeToClass(Type src) {
     Class<?> result = null;
+    //如果Type是class
     if (src instanceof Class) {
+      //强转成Class
       result = (Class<?>) src;
+      //如果是 ParameterizedType 泛型参数化的类型,
     } else if (src instanceof ParameterizedType) {
+      //获取泛型参数化类型的原始类型
       result = (Class<?>) ((ParameterizedType) src).getRawType();
     } else if (src instanceof GenericArrayType) {
+      //如果是泛型数组, 则获取数组的组件类型 如:
+      // 如: List<String>[] 获取getGenericComponentType()结果为 List<String>
+      // 如: T[] 获取getGenericComponentType()结果为 T
       Type componentType = ((GenericArrayType) src).getGenericComponentType();
+      //todo 不明白 , src是GenericArrayType类型, 但 componentType 又是Class的情况想不出来
       if (componentType instanceof Class) {
+        //创建这个类型的数组的class
         result = Array.newInstance((Class<?>) componentType, 0).getClass();
       } else {
+        //如果 componentType 还是Type类型(ParameterizedType, TypeVariable, GenericArrayType, WildcardType), 则继续解析
         Class<?> componentClass = typeToClass(componentType);
+        //创建这个类型的数组的class
         result = Array.newInstance(componentClass, 0).getClass();
       }
     }
+    //如果Type的src是 TypeVariable 或者 WildcardType, 无法处理, 返回Object类型
+    //一般不会, 因为在调用这个方法之前, 会将取得 TypeVariable 或 WildcardType 的边界值
     if (result == null) {
       result = Object.class;
     }

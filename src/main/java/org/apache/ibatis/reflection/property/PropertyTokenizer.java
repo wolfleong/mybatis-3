@@ -18,6 +18,7 @@ package org.apache.ibatis.reflection.property;
 import java.util.Iterator;
 
 /**
+ * 属性分割器
  * @author Clinton Begin
  */
 public class PropertyTokenizer implements Iterator<PropertyTokenizer> {
@@ -28,17 +29,25 @@ public class PropertyTokenizer implements Iterator<PropertyTokenizer> {
 
   public PropertyTokenizer(String fullname) {
     int delim = fullname.indexOf('.');
+    //如是有.的话
     if (delim > -1) {
+      //获取.前面的属性
       name = fullname.substring(0, delim);
+      //.后面的属性作为子串
       children = fullname.substring(delim + 1);
     } else {
+      //如果没有., 则当前fullname即为
       name = fullname;
+      //没有子串
       children = null;
     }
+    //带索引的名字, 如: properties[name]
     indexedName = name;
     delim = name.indexOf('[');
     if (delim > -1) {
+      //获取properties[name]的中的索引name
       index = name.substring(delim + 1, name.length() - 1);
+      //获取属性名
       name = name.substring(0, delim);
     }
   }

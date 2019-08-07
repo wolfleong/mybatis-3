@@ -47,14 +47,27 @@ import org.apache.ibatis.transaction.TransactionFactory;
 import org.apache.ibatis.type.JdbcType;
 
 /**
+ * XML配置构建器, 主要负责解析mybatis-config.xml配置文件
  * @author Clinton Begin
  * @author Kazuki Shimizu
  */
 public class XMLConfigBuilder extends BaseBuilder {
 
+  /**
+   * 是否已经解析
+   */
   private boolean parsed;
+  /**
+   * 基于Java的XPath解析器
+   */
   private final XPathParser parser;
+  /**
+   * 环境
+   */
   private String environment;
+  /**
+   * Reflector工厂对象
+   */
   private final ReflectorFactory localReflectorFactory = new DefaultReflectorFactory();
 
   public XMLConfigBuilder(Reader reader) {
@@ -78,12 +91,19 @@ public class XMLConfigBuilder extends BaseBuilder {
   }
 
   public XMLConfigBuilder(InputStream inputStream, String environment, Properties props) {
+    //是否校验xml, 默认是true
+    //XPathParser中的variable和Configuration中的variables是一样的
     this(new XPathParser(inputStream, true, props, new XMLMapperEntityResolver()), environment, props);
   }
 
+  /**
+   * @param props 方法传入的自定义 props, 默认是null
+   */
   private XMLConfigBuilder(XPathParser parser, String environment, Properties props) {
+    //创建Configuration对象
     super(new Configuration());
     ErrorContext.instance().resource("SQL Mapper Configuration");
+    //设置Configuration的variables属性, 如果是null, 解析配置文件完会新建一个
     this.configuration.setVariables(props);
     this.parsed = false;
     this.environment = environment;
@@ -91,10 +111,13 @@ public class XMLConfigBuilder extends BaseBuilder {
   }
 
   public Configuration parse() {
+    //如果已经解析过, 则抛异常
     if (parsed) {
       throw new BuilderException("Each XMLConfigBuilder can only be used once.");
     }
+    //设置已经解析
     parsed = true;
+    //解析 <configuration> 标签的内容
     parseConfiguration(parser.evalNode("/configuration"));
     return configuration;
   }
@@ -102,20 +125,31 @@ public class XMLConfigBuilder extends BaseBuilder {
   private void parseConfiguration(XNode root) {
     try {
       //issue #117 read properties first
+      //解析<properties>, 一定要先解析这个, 因这些动态配置在下面的解析中有可能会用到
       propertiesElement(root.evalNode("properties"));
+      //解析<settings>
       Properties settings = settingsAsProperties(root.evalNode("settings"));
       loadCustomVfs(settings);
       loadCustomLogImpl(settings);
+      //解析<typeAliases>
       typeAliasesElement(root.evalNode("typeAliases"));
+      //解析<plugins>
       pluginElement(root.evalNode("plugins"));
+      //解析<objectFactory>
       objectFactoryElement(root.evalNode("objectFactory"));
+      //解析<objectWrapperFactory>
       objectWrapperFactoryElement(root.evalNode("objectWrapperFactory"));
+      //解析<reflectorFactory>
       reflectorFactoryElement(root.evalNode("reflectorFactory"));
       settingsElement(settings);
       // read it after objectFactory and objectWrapperFactory issue #631
+      //解析<environments>
       environmentsElement(root.evalNode("environments"));
+      //解析<databaseIdProvider>
       databaseIdProviderElement(root.evalNode("databaseIdProvider"));
+      //解析<typeHandlers>
       typeHandlerElement(root.evalNode("typeHandlers"));
+      //解析<mappers>
       mapperElement(root.evalNode("mappers"));
     } catch (Exception e) {
       throw new BuilderException("Error parsing SQL Mapper Configuration. Cause: " + e, e);
@@ -123,9 +157,11 @@ public class XMLConfigBuilder extends BaseBuilder {
   }
 
   private Properties settingsAsProperties(XNode context) {
+    //如果这个节点是null, 返回一个空的Properties
     if (context == null) {
       return new Properties();
     }
+    //将子标签解析成properties
     Properties props = context.getChildrenAsProperties();
     // Check that all settings are known to the configuration class
     MetaClass metaConfig = MetaClass.forClass(Configuration.class, localReflectorFactory);
@@ -218,24 +254,39 @@ public class XMLConfigBuilder extends BaseBuilder {
     }
   }
 
+  /**
+   * 如果属性在不只一个地方进行了配置，那么 MyBatis 将按照下面的顺序来加载：
+   *
+   * 在 properties 元素体内指定的属性首先被读取。
+   * 然后根据 properties 元素中的 resource 属性读取类路径下属性文件或根据 url 属性指定的路径读取属性文件，并覆盖已读取的同名属性。
+   * 最后读取作为方法参数传递的属性，并覆盖已读取的同名属性。
+   * 因此，通过方法参数传递的属性(vars变量)具有最高优先级，resource/url 属性中指定的配置文件次之，最低优先级的是 properties 属性中指定的属性。
+   */
   private void propertiesElement(XNode context) throws Exception {
     if (context != null) {
+      //<properties>节点下的子节点<property>, 获取<property>节点的name和value作为defaults的键值
       Properties defaults = context.getChildrenAsProperties();
+      //url和resource属性用于加载 指定.properties文件的内容
       String resource = context.getStringAttribute("resource");
       String url = context.getStringAttribute("url");
+      //url 和 resource属性不能同时存在
       if (resource != null && url != null) {
         throw new BuilderException("The properties element cannot specify both a URL and a resource based property file reference.  Please specify one or the other.");
       }
+      //引用文件的property复盖<property>的
       if (resource != null) {
         defaults.putAll(Resources.getResourceAsProperties(resource));
       } else if (url != null) {
         defaults.putAll(Resources.getUrlAsProperties(url));
       }
       Properties vars = configuration.getVariables();
+      //方法传递的properties复盖上面设置的
       if (vars != null) {
         defaults.putAll(vars);
       }
+      //更新解析器中的variables
       parser.setVariables(defaults);
+      //更新全局配置的variables
       configuration.setVariables(defaults);
     }
   }
