@@ -35,6 +35,7 @@ public class TypeParameterResolver {
    *         they will be resolved to the actual runtime {@link Type}s.
    */
   public static Type resolveFieldType(Field field, Type srcType) {
+    //解析字段的泛型类型
     Type fieldType = field.getGenericType();
     Class<?> declaringClass = field.getDeclaringClass();
     return resolveType(fieldType, srcType, declaringClass);
@@ -45,6 +46,7 @@ public class TypeParameterResolver {
    *         they will be resolved to the actual runtime {@link Type}s.
    */
   public static Type resolveReturnType(Method method, Type srcType) {
+    //方法返回值的泛型类型
     Type returnType = method.getGenericReturnType();
     Class<?> declaringClass = method.getDeclaringClass();
     return resolveType(returnType, srcType, declaringClass);
