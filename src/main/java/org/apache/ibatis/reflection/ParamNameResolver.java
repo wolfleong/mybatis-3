@@ -30,6 +30,7 @@ import org.apache.ibatis.session.RowBounds;
 
 /**
  * 参数名解析
+ * find(@Param("name")), sql模板中可以用#{name}, #{0}, #{param0} 三种获取参数
  */
 public class ParamNameResolver {
 
