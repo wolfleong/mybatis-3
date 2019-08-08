@@ -27,8 +27,12 @@ import org.apache.ibatis.reflection.invoker.MethodInvoker;
 import org.apache.ibatis.reflection.property.PropertyTokenizer;
 
 /**
- * - 类的元数据, 可以根据属性调用链获取getter, setter, 类型, 方法等
+ * 类的元数据, 可以根据属性调用链获取getter, setter, 类型, 方法等
+ * - 主要是对Reflector的增强, 主要增强三种类型的方法, 如: findProperty, getSetterType, hasSetter, getGetterType, hasGetter方法,
+ *   对这几个方法的增强是可以获取调用链下的属性名和类型等
  * - 与Reflector的区别, Reflector只能获取当前类的相关属性, 方法, 类型, 而MetaClass可以获取调用链下的相关属性,方法, 类型
+ * - MetaClass是通过类的反射来获取相关属性的, 这就表明, MetaClass是处理不了有集合相关的属性,
+ *    如: person.hobbyMap[football].num和 person.list[0].name, 这些属性都有个共同的特点, 需要取出对应的实例, 再从实例中取属性的值
  * @author Clinton Begin
  */
 public class MetaClass {
@@ -91,7 +95,7 @@ public class MetaClass {
   }
 
   /**
-   * 获取指定调用链属性的参数类型
+   * 获取指定调用链属性的参数类型, 没办法处理: person.hobbyMap[football].name, person.list[0].name
    */
   public Class<?> getSetterType(String name) {
     PropertyTokenizer prop = new PropertyTokenizer(name);
@@ -104,7 +108,8 @@ public class MetaClass {
   }
 
   /**
-   * 获取指定调用链的返回类型
+   * 获取指定调用链的返回类型, 没办法处理: person.hobbyMap[football].name
+   * 可以处理person.list[0].name的类型
    */
   public Class<?> getGetterType(String name) {
     PropertyTokenizer prop = new PropertyTokenizer(name);
