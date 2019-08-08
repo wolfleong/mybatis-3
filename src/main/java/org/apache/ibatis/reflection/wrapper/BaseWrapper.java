@@ -24,6 +24,7 @@ import org.apache.ibatis.reflection.property.PropertyTokenizer;
 
 /**
  * ObjectWrapper的抽象类, 提供一些公用的方法
+ * - 之所有要把MetaObject传进来, 是因为要通过MetaObject来获取一些指定属性的对象
  * @author Clinton Begin
  */
 public abstract class BaseWrapper implements ObjectWrapper {

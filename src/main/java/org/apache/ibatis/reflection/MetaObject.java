@@ -137,7 +137,7 @@ public class MetaObject {
   }
 
   /**
-   * 获取指定属性的值
+   * 获取指定属性的值, 相当于递归获取值
    */
   public Object getValue(String name) {
     //属性解析器
@@ -161,6 +161,7 @@ public class MetaObject {
 
   /**
    * 设置指定属性的值
+   *
    */
   public void setValue(String name, Object value) {
     //属性解析器分解
@@ -188,7 +189,7 @@ public class MetaObject {
   }
 
   /**
-   * 创建属性的MetaObject
+   * 创建指定属性值的 MetaObject
    */
   public MetaObject metaObjectForProperty(String name) {
     //获取当前属性的值

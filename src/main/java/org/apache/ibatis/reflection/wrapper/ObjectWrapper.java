@@ -25,7 +25,8 @@ import org.apache.ibatis.reflection.property.PropertyTokenizer;
  * 对象包装器接口, 基于MetaClass工具类和实例对象, 可以对指定对象做各种操作. 相当于进一步加强MetaClass, 增加实例对象的操作
  * - 主要对对象进行单层属性的获取值和设置值
  * - 相对MetaClass增加了几个方法, get(), set(), instantiatePropertyValue(), isCollection(),add(),
- *   这些新增的方法都是对对象属性的单层操作
+ *   这些新增的方法都是对对象属性的单层操作. 这些get(), set(), instantiatePropertyValue()都是对不同的对象类型有不同的实现,
+ *   它的实现主要分三类, bean对象, Collection对象, Map对象
  * - 增强了MetaClass的相关方法, 如: getSetterType(), hasSetter(), getGetterType(), hasGetter(),
  *    因为有实例对象的存在, 可以处理MetaClass处理不了的情况, person.hobbyMap[football].num 和 person.list[0].name
  *
