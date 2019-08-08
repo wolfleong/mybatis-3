@@ -362,16 +362,21 @@ public final class TypeHandlerRegistry {
         mappedTypeFound = true;
       }
     }
+    //如果找不到 MappedTypes 注解, 且类是 TypeReference 的子类
     // @since 3.1.0 - try to auto-discover the mapped type
     if (!mappedTypeFound && typeHandler instanceof TypeReference) {
       try {
+        //通过 TypeReference 自动发现 JavaType
         TypeReference<T> typeReference = (TypeReference<T>) typeHandler;
+        //注册
         register(typeReference.getRawType(), typeHandler);
         mappedTypeFound = true;
       } catch (Throwable t) {
         // maybe users define the TypeReference with a different type and are not assignable, so just ignore it
       }
     }
+
+    //没注解又不能自动发现, 只能注册JavaType为null的方法
     if (!mappedTypeFound) {
       register((Class<T>) null, typeHandler);
     }
@@ -466,7 +471,7 @@ public final class TypeHandlerRegistry {
     //创建TypeHandler实例, 如果javaTypeClass不为null, 则为typeHandler为enum类型
     if (javaTypeClass != null) {
       try {
-        //获取带参数类型的构造器, enum的TypeHandler
+        //获取带参数类型的构造器, enum的TypeHandler, 先尝试用带参数的构造器创建
         Constructor<?> c = typeHandlerClass.getConstructor(Class.class);
         return (TypeHandler<T>) c.newInstance(javaTypeClass);
       } catch (NoSuchMethodException ignored) {

@@ -424,6 +424,9 @@ public class XMLConfigBuilder extends BaseBuilder {
     }
   }
 
+  /**
+   * 解析事务管理器的配置
+   */
   private TransactionFactory transactionManagerElement(XNode context) throws Exception {
     if (context != null) {
       //事务管理器工厂别名
@@ -440,7 +443,7 @@ public class XMLConfigBuilder extends BaseBuilder {
   }
 
   /**
-   * 配置dataSource
+   * 解析dataSource的配置
    */
   private DataSourceFactory dataSourceElement(XNode context) throws Exception {
     if (context != null) {
@@ -457,19 +460,30 @@ public class XMLConfigBuilder extends BaseBuilder {
     throw new BuilderException("Environment declaration requires a DataSourceFactory.");
   }
 
+  /**
+   * 解析TypeHandler的配置
+   */
   private void typeHandlerElement(XNode parent) {
+    //节点不为null
     if (parent != null) {
+      //遍历子节点
       for (XNode child : parent.getChildren()) {
+        //如果配置了包节点
         if ("package".equals(child.getName())) {
+          //获取包名
           String typeHandlerPackage = child.getStringAttribute("name");
+          //注册包下所有类
           typeHandlerRegistry.register(typeHandlerPackage);
         } else {
+          //手动配置的TypeHandler
           String javaTypeName = child.getStringAttribute("javaType");
           String jdbcTypeName = child.getStringAttribute("jdbcType");
           String handlerTypeName = child.getStringAttribute("handler");
           Class<?> javaTypeClass = resolveClass(javaTypeName);
           JdbcType jdbcType = resolveJdbcType(jdbcTypeName);
+          //typeHandlerClass不能为null, 否则报错
           Class<?> typeHandlerClass = resolveClass(handlerTypeName);
+          //根据javaType, jdbcType两种情况分别调用不同的方法
           if (javaTypeClass != null) {
             if (jdbcType == null) {
               typeHandlerRegistry.register(javaTypeClass, typeHandlerClass);
@@ -484,30 +498,47 @@ public class XMLConfigBuilder extends BaseBuilder {
     }
   }
 
+  /**
+   * 解析Mapper的配置
+   */
   private void mapperElement(XNode parent) throws Exception {
     if (parent != null) {
+      //遍历子节点
       for (XNode child : parent.getChildren()) {
+        //如果有指定了包扫描
         if ("package".equals(child.getName())) {
+          //获取包名
           String mapperPackage = child.getStringAttribute("name");
+          //注册包下的Mapper
           configuration.addMappers(mapperPackage);
         } else {
+          //classpath资源
           String resource = child.getStringAttribute("resource");
+          //url资源
           String url = child.getStringAttribute("url");
+          //Mapper接口
           String mapperClass = child.getStringAttribute("class");
+          //如果只有resource
           if (resource != null && url == null && mapperClass == null) {
             ErrorContext.instance().resource(resource);
+            //获资源文件流
             InputStream inputStream = Resources.getResourceAsStream(resource);
+            //创建XMLMapperBuilder对象
             XMLMapperBuilder mapperParser = new XMLMapperBuilder(inputStream, configuration, resource, configuration.getSqlFragments());
+            //解析XML文件
             mapperParser.parse();
+            //如果只能url
           } else if (resource == null && url != null && mapperClass == null) {
             ErrorContext.instance().resource(url);
             InputStream inputStream = Resources.getUrlAsStream(url);
             XMLMapperBuilder mapperParser = new XMLMapperBuilder(inputStream, configuration, url, configuration.getSqlFragments());
             mapperParser.parse();
+            //如果只有mapperClass
           } else if (resource == null && url == null && mapperClass != null) {
             Class<?> mapperInterface = Resources.classForName(mapperClass);
             configuration.addMapper(mapperInterface);
           } else {
+            //url, resource, class只能三选一来配置
             throw new BuilderException("A mapper element may only specify a url, resource or class, but not more than one.");
           }
         }
