@@ -41,7 +41,7 @@ public class BeanWrapper extends BaseWrapper {
   }
 
   /**
-   * 获取属性的值对象
+   * 获取指定单层属性的值对象
    */
   @Override
   public Object get(PropertyTokenizer prop) {
@@ -58,7 +58,7 @@ public class BeanWrapper extends BaseWrapper {
   }
 
   /**
-   * 设置指定属性的值对象
+   * 设置指定单层属性的值对象
    */
   @Override
   public void set(PropertyTokenizer prop, Object value) {
