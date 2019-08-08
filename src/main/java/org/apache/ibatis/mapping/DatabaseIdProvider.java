@@ -33,5 +33,8 @@ public interface DatabaseIdProvider {
     // NOP
   }
 
+  /**
+   * 获取数据库的标识(有可能是真实的数据库名称, 也有可能是别名)
+   */
   String getDatabaseId(DataSource dataSource) throws SQLException;
 }

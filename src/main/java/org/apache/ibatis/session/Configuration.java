@@ -225,6 +225,7 @@ public class Configuration {
   public void setLogImpl(Class<? extends Log> logImpl) {
     if (logImpl != null) {
       this.logImpl = logImpl;
+      //直接设置自定义的日志实现
       LogFactory.useCustomLogging(this.logImpl);
     }
   }
@@ -233,9 +234,14 @@ public class Configuration {
     return this.vfsImpl;
   }
 
+  /**
+   * 添加VFS实现类
+   */
   public void setVfsImpl(Class<? extends VFS> vfsImpl) {
     if (vfsImpl != null) {
+      //只存最后一个
       this.vfsImpl = vfsImpl;
+      //但是VFS会加用第一个合法的
       VFS.addImplClass(this.vfsImpl);
     }
   }

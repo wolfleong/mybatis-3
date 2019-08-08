@@ -315,7 +315,7 @@ public class XNode {
   }
 
   /**
-   * 将子节点的属性(name,value)的值返回
+   * 将子节点的属性(name,value)的值返回, 通用逻辑
    */
   public Properties getChildrenAsProperties() {
     Properties properties = new Properties();

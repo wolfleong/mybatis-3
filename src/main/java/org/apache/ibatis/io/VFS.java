@@ -49,7 +49,9 @@ public abstract class VFS {
     static final VFS INSTANCE = createVFS();
 
     /**
-     * 按照列表的顺序来创建实例, 选择最后一个符合的, 默认是DefaultVFS
+     * 按照列表的顺序来创建实例, 如果创建成功且是合法的, 则返回.
+     * - 按顺序, 先创建自定义, 再到 JBoss6VFS , 最后才是 DefaultVFS
+     * - 要加载 JBoss6VFS , 需要JBoss相关的包, 所以是非法的, 如果没有自定义的, 最后一般都是 DefaultVFS
      */
     @SuppressWarnings("unchecked")
     static VFS createVFS() {
@@ -60,6 +62,7 @@ public abstract class VFS {
 
       // Try each implementation class until a valid one is found
       VFS vfs = null;
+      //循环条件, 只有当vfs是null或者不合法的才去尝试创建
       for (int i = 0; vfs == null || !vfs.isValid(); i++) {
         Class<? extends VFS> impl = impls.get(i);
         try {

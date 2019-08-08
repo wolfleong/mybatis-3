@@ -37,7 +37,13 @@ public abstract class BaseBuilder {
    * 全局配置对象
    */
   protected final Configuration configuration;
+  /**
+   * 别名注册器
+   */
   protected final TypeAliasRegistry typeAliasRegistry;
+  /**
+   * TypeHandler注册器
+   */
   protected final TypeHandlerRegistry typeHandlerRegistry;
 
   public BaseBuilder(Configuration configuration) {
@@ -66,7 +72,7 @@ public abstract class BaseBuilder {
   }
 
   /**
-   * 解析逗号分割的列表为set
+   * 解析逗号分割的字符串为set
    */
   protected Set<String> stringSetValueOf(String value, String defaultValue) {
     value = value == null ? defaultValue : value;
@@ -153,16 +159,19 @@ public abstract class BaseBuilder {
     }
     //解析 typeHandlerAlias 为类
     Class<?> type = resolveClass(typeHandlerAlias);
+    //如果不是TypeHandler的子类, 报错
     if (type != null && !TypeHandler.class.isAssignableFrom(type)) {
       throw new BuilderException("Type " + type.getName() + " is not a valid TypeHandler because it does not implement TypeHandler interface");
     }
+    //强转成TypeHandler的Class
     @SuppressWarnings("unchecked") // already verified it is a TypeHandler
     Class<? extends TypeHandler<?>> typeHandlerType = (Class<? extends TypeHandler<?>>) type;
     return resolveTypeHandler(javaType, typeHandlerType);
   }
 
   /**
-   * typeHandlerType这个类去TypeHandler拿, 如果没有拿到, 则创建一个
+   * typeHandlerType这个类去TypeHandler拿, 如果没有拿到, 则创建一个.
+   * 为什么要有JavaType呢, 主要是创建枚举的TypeHandler时候用到
    */
   protected TypeHandler<?> resolveTypeHandler(Class<?> javaType, Class<? extends TypeHandler<?>> typeHandlerType) {
     if (typeHandlerType == null) {
