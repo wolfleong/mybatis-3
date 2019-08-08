@@ -18,6 +18,7 @@ package org.apache.ibatis.reflection;
 import java.util.Arrays;
 
 /**
+ * 主要基于 Arrays 工具类提供数组的hashCode, equals 和toString的重新实现, 也就是统一入口
  * Provides hashCode, equals and toString methods that can handle array.
  */
 public class ArrayUtil {
@@ -30,14 +31,17 @@ public class ArrayUtil {
    * @return A hash code of {@code obj} or 0 if {@code obj} is <code>null</code>
    */
   public static int hashCode(Object obj) {
+    //对象是null, hashCode直接0
     if (obj == null) {
       // for consistency with Arrays#hashCode() and Objects#hashCode()
       return 0;
     }
     final Class<?> clazz = obj.getClass();
+    //如果不是数组, 则不处理hashCode, 返回对象默认的
     if (!clazz.isArray()) {
       return obj.hashCode();
     }
+    //强转成对应的数组类型, 重新计算hashCode
     final Class<?> componentType = clazz.getComponentType();
     if (long.class.equals(componentType)) {
       return Arrays.hashCode((long[]) obj);

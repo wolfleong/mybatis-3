@@ -27,6 +27,9 @@ public class ExceptionUtil {
     // Prevent Instantiation
   }
 
+  /**
+   * 去掉一层层异常包装, 返回最原始的异常
+   */
   public static Throwable unwrapThrowable(Throwable wrapped) {
     Throwable unwrapped = wrapped;
     while (true) {

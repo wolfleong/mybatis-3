@@ -93,10 +93,13 @@ public class BeanWrapper extends BaseWrapper {
   public Class<?> getSetterType(String name) {
     PropertyTokenizer prop = new PropertyTokenizer(name);
     if (prop.hasNext()) {
+      //先获取MetaObject, 再用MetaObject来获取SetterType
       MetaObject metaValue = metaObject.metaObjectForProperty(prop.getIndexedName());
+      //如果没找到, 直接用metaClass的
       if (metaValue == SystemMetaObject.NULL_META_OBJECT) {
         return metaClass.getSetterType(name);
       } else {
+        //找到属性的MetaObject, 用MetaObject来获取
         return metaValue.getSetterType(prop.getChildren());
       }
     } else {
@@ -108,6 +111,7 @@ public class BeanWrapper extends BaseWrapper {
   public Class<?> getGetterType(String name) {
     PropertyTokenizer prop = new PropertyTokenizer(name);
     if (prop.hasNext()) {
+      //先获取属性的MetaObject, 再用MeteObject来获取属性的getterType
       MetaObject metaValue = metaObject.metaObjectForProperty(prop.getIndexedName());
       if (metaValue == SystemMetaObject.NULL_META_OBJECT) {
         return metaClass.getGetterType(name);

@@ -30,7 +30,7 @@ import org.apache.ibatis.reflection.wrapper.ObjectWrapperFactory;
 /**
  * 对象元数据, 主要是基于 ObjectWrapper 来操作对象的值, 对 ObjectWrapper 进行增强处理
  * - 增加的方法 getValue()方法是对ObjectWrapper.get()方法的增强, setValue()是对ObjectWrapper.set()增强, 其他方法则直接调用
- *   ObjectWrapper的方法. 增强的内容是, 可以链式获取指定属性的对象
+ *   ObjectWrapper的方法. 增强的内容是, 可以链式获取指定属性的对象, 相当于递归获取
  * - 创建MetaObject时会根据不同类型的对象, 创建不同的ObjectWrapper
  * @author Clinton Begin
  */
@@ -160,7 +160,7 @@ public class MetaObject {
   }
 
   /**
-   * 设置指定属性的值
+   * 设置指定属性的值, 递归
    *
    */
   public void setValue(String name, Object value) {
