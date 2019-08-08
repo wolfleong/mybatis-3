@@ -53,10 +53,22 @@ import org.apache.ibatis.type.TypeHandler;
  * @author Kazuki Shimizu
  */
 public class XMLMapperBuilder extends BaseBuilder {
-
+  /**
+   * 基于Java XPath解析器
+   */
   private final XPathParser parser;
+
+  /**
+   * Mapper构造器助手
+   */
   private final MapperBuilderAssistant builderAssistant;
+  /**
+   * sql块集合, 如: <sql id="abc">... </sql>
+   */
   private final Map<String, XNode> sqlFragments;
+  /**
+   * 资源引用地址, 可能是resource , 可能是url
+   */
   private final String resource;
 
   @Deprecated
@@ -83,16 +95,24 @@ public class XMLMapperBuilder extends BaseBuilder {
 
   private XMLMapperBuilder(XPathParser parser, Configuration configuration, String resource, Map<String, XNode> sqlFragments) {
     super(configuration);
+    //创建Mapper构造器助手
     this.builderAssistant = new MapperBuilderAssistant(configuration, resource);
     this.parser = parser;
     this.sqlFragments = sqlFragments;
     this.resource = resource;
   }
 
+  /**
+   * 解析方法
+   */
   public void parse() {
+    //判断是否已经加载过, 如果没有加载, 开始解析
     if (!configuration.isResourceLoaded(resource)) {
+      //解析xml的 mapper 节点
       configurationElement(parser.evalNode("/mapper"));
+      //记录xml资源文件, 表示已经加载过当前resource
       configuration.addLoadedResource(resource);
+      //绑定当前 Mapper接口
       bindMapperForNamespace();
     }
 

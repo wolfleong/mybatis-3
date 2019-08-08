@@ -314,6 +314,9 @@ public class Configuration {
     loadedResources.add(resource);
   }
 
+  /**
+   * 当前resource是否已经加载完
+   */
   public boolean isResourceLoaded(String resource) {
     return loadedResources.contains(resource);
   }
