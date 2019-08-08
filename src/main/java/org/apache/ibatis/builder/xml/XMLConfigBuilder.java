@@ -530,12 +530,17 @@ public class XMLConfigBuilder extends BaseBuilder {
             //如果只能url
           } else if (resource == null && url != null && mapperClass == null) {
             ErrorContext.instance().resource(url);
+            //通过url获取文件流
             InputStream inputStream = Resources.getUrlAsStream(url);
+            //创建XMLMapperBuilder对象
             XMLMapperBuilder mapperParser = new XMLMapperBuilder(inputStream, configuration, url, configuration.getSqlFragments());
+            //解析文件
             mapperParser.parse();
             //如果只有mapperClass
           } else if (resource == null && url == null && mapperClass != null) {
+            //如果是Mapper接口
             Class<?> mapperInterface = Resources.classForName(mapperClass);
+            //直接注册
             configuration.addMapper(mapperInterface);
           } else {
             //url, resource, class只能三选一来配置
