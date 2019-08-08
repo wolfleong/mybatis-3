@@ -310,6 +310,9 @@ public class Configuration {
     this.mapUnderscoreToCamelCase = mapUnderscoreToCamelCase;
   }
 
+  /**
+   * 新加一个已加载的资源
+   */
   public void addLoadedResource(String resource) {
     loadedResources.add(resource);
   }
