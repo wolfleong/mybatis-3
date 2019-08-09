@@ -160,7 +160,13 @@ public class Configuration {
   protected final Map<String, XNode> sqlFragments = new StrictMap<>("XML fragments parsed from previous mappers");
 
   protected final Collection<XMLStatementBuilder> incompleteStatements = new LinkedList<>();
+  /**
+   * 记录未完成解析的缓存引用
+   */
   protected final Collection<CacheRefResolver> incompleteCacheRefs = new LinkedList<>();
+  /**
+   * 记录未完成解析的ResultMap解析器
+   */
   protected final Collection<ResultMapResolver> incompleteResultMaps = new LinkedList<>();
   protected final Collection<MethodResolver> incompleteMethods = new LinkedList<>();
 
