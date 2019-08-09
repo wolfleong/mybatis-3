@@ -169,6 +169,9 @@ public class Configuration {
    * references a cache bound to another namespace and the value is the
    * namespace which the actual cache is bound to.
    */
+  /**
+   * 缓存配置引用, 当前namespace和要引用的namespace的关联
+   */
   protected final Map<String, String> cacheRefMap = new HashMap<>();
 
   public Configuration(Environment environment) {
@@ -790,6 +793,9 @@ public class Configuration {
     return mappedStatements.containsKey(statementName);
   }
 
+  /**
+   * 添加缓存引用
+   */
   public void addCacheRef(String namespace, String referencedNamespace) {
     cacheRefMap.put(namespace, referencedNamespace);
   }

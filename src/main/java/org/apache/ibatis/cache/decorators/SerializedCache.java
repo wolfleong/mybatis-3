@@ -29,6 +29,7 @@ import org.apache.ibatis.cache.CacheException;
 import org.apache.ibatis.io.Resources;
 
 /**
+ * 序列化缓存, 这样做的话, 每次查询出来的缓存对象都是可以更改的, 并且不影响缓存中的对象值
  * @author Clinton Begin
  */
 public class SerializedCache implements Cache {

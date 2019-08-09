@@ -219,11 +219,15 @@ public class XMLMapperBuilder extends BaseBuilder {
 
   private void cacheRefElement(XNode context) {
     if (context != null) {
+      //记录缓存引用指向, 将当前 namespace 的缓存指向指定的 namespace
       configuration.addCacheRef(builderAssistant.getCurrentNamespace(), context.getStringAttribute("namespace"));
+      //创建缓存引用解析器
       CacheRefResolver cacheRefResolver = new CacheRefResolver(builderAssistant, context.getStringAttribute("namespace"));
       try {
+        //解析引用
         cacheRefResolver.resolveCacheRef();
       } catch (IncompleteElementException e) {
+        //如果抛异常, 记录未解析完成的缓存引用
         configuration.addIncompleteCacheRef(cacheRefResolver);
       }
     }
@@ -231,15 +235,25 @@ public class XMLMapperBuilder extends BaseBuilder {
 
   private void cacheElement(XNode context) {
     if (context != null) {
+      //获取缓存实现类, 如果没有, 则默认是 PERPETUAL, 也就是不过期缓存
       String type = context.getStringAttribute("type", "PERPETUAL");
+      //解析缓存类
       Class<? extends Cache> typeClass = typeAliasRegistry.resolveAlias(type);
+      //获取缓存的清除方式, 默认是 LRU, 也就是最近使用不删除原则
       String eviction = context.getStringAttribute("eviction", "LRU");
+      //解析清除方式的类
       Class<? extends Cache> evictionClass = typeAliasRegistry.resolveAlias(eviction);
+      //获取缓存刷新时间, 也就是定时清除缓存的时间
       Long flushInterval = context.getLongAttribute("flushInterval");
+      //设置缓存的大小, 基本所有的装饰类都有setSize这个方法
       Integer size = context.getIntAttribute("size");
+      //获取缓存的对象是否可读写, 底层通过序列化反序列化来实现
       boolean readWrite = !context.getBooleanAttribute("readOnly", false);
+      //获取缓存, 获取不到是否阻塞
       boolean blocking = context.getBooleanAttribute("blocking", false);
+      //获取<cache>的配置
       Properties props = context.getChildrenAsProperties();
+      //根据参数创建缓存对象
       builderAssistant.useNewCache(typeClass, evictionClass, flushInterval, size, readWrite, blocking, props);
     }
   }

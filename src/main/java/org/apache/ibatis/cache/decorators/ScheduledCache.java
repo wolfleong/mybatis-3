@@ -18,7 +18,7 @@ package org.apache.ibatis.cache.decorators;
 import org.apache.ibatis.cache.Cache;
 
 /**
- * 定时清空所有缓存
+ * 定时刷新所有缓存
  * @author Clinton Begin
  */
 public class ScheduledCache implements Cache {

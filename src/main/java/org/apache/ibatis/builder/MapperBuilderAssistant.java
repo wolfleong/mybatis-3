@@ -54,9 +54,21 @@ import org.apache.ibatis.type.TypeHandler;
  */
 public class MapperBuilderAssistant extends BaseBuilder {
 
+  /**
+   * 当前的namespace
+   */
   private String currentNamespace;
+  /**
+   * 当前解析的资源
+   */
   private final String resource;
+  /**
+   * 当前的缓存, 有可能是从缓存引用获取的, 有可能是新建的缓存对象
+   */
   private Cache currentCache;
+  /**
+   * 是否未解析缓存
+   */
   private boolean unresolvedCacheRef; // issue #676
 
   public MapperBuilderAssistant(Configuration configuration, String resource) {
@@ -108,24 +120,37 @@ public class MapperBuilderAssistant extends BaseBuilder {
     return currentNamespace + "." + base;
   }
 
+  /**
+   * 使用缓存的引用
+   */
   public Cache useCacheRef(String namespace) {
+    //要引用缓存的namespace不能为null
     if (namespace == null) {
       throw new BuilderException("cache-ref element requires a namespace attribute.");
     }
     try {
+      //标记未解析缓存引用
       unresolvedCacheRef = true;
+      //根据引用的namespace 获取缓存
       Cache cache = configuration.getCache(namespace);
+      //如果拿到的缓存为null, 报错
       if (cache == null) {
         throw new IncompleteElementException("No cache for namespace '" + namespace + "' could be found.");
       }
+      //设置当前的缓存
       currentCache = cache;
+      //缓存引用解析完成
       unresolvedCacheRef = false;
+      //返回已经解析到的缓存
       return cache;
     } catch (IllegalArgumentException e) {
       throw new IncompleteElementException("No cache for namespace '" + namespace + "' could be found.", e);
     }
   }
 
+  /**
+   * 创建缓存
+   */
   public Cache useNewCache(Class<? extends Cache> typeClass,
       Class<? extends Cache> evictionClass,
       Long flushInterval,
@@ -133,8 +158,11 @@ public class MapperBuilderAssistant extends BaseBuilder {
       boolean readWrite,
       boolean blocking,
       Properties props) {
+    //创建当前namespace的缓存
     Cache cache = new CacheBuilder(currentNamespace)
+        //缓存的实现
         .implementation(valueOrDefault(typeClass, PerpetualCache.class))
+        //缓存的清除方式, 如果是自定义缓存, 最终构建的时候, 是不会加装饰类的
         .addDecorator(valueOrDefault(evictionClass, LruCache.class))
         .clearInterval(flushInterval)
         .size(size)
@@ -142,7 +170,9 @@ public class MapperBuilderAssistant extends BaseBuilder {
         .blocking(blocking)
         .properties(props)
         .build();
+    //将缓存加入到配置中
     configuration.addCache(cache);
+    //缓存当前的缓存
     currentCache = cache;
     return cache;
   }
