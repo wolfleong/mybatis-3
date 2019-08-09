@@ -217,6 +217,11 @@ public class XMLMapperBuilder extends BaseBuilder {
     }
   }
 
+  /**
+   * 概思路是:
+   * 获取缓存引用的namespace, 先记录下缓存引用的指向, 再创建引用解析器, 用引用解析器解析缓存引用.
+   * 引用解析器是调用mapper构建助手来解析的, 在缓存对象映射中找, 找到就返回
+   */
   private void cacheRefElement(XNode context) {
     if (context != null) {
       //记录缓存引用指向, 将当前 namespace 的缓存指向指定的 namespace
