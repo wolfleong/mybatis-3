@@ -115,9 +115,11 @@ public class XMLMapperBuilder extends BaseBuilder {
       //绑定当前 Mapper接口
       bindMapperForNamespace();
     }
-
+    //迭代重新解析未成功的ResultMap
     parsePendingResultMaps();
+    //迭代重新解析未成功的cacheRef
     parsePendingCacheRefs();
+    //迭代重新解析未成功的statements
     parsePendingStatements();
   }
 
@@ -141,7 +143,7 @@ public class XMLMapperBuilder extends BaseBuilder {
       cacheRefElement(context.evalNode("cache-ref"));
       //解析 <cache> 节点
       cacheElement(context.evalNode("cache"));
-      //解析 <parameterMap>
+      //解析 <parameterMap>, 已经废弃! 不做解读
       parameterMapElement(context.evalNodes("/mapper/parameterMap"));
       //解析 <resultMap>
       resultMapElements(context.evalNodes("/mapper/resultMap"));
@@ -154,34 +156,47 @@ public class XMLMapperBuilder extends BaseBuilder {
     }
   }
 
+  /**
+   * 解析对数据库操作的sql, 如select,insert, update, delete
+   */
   private void buildStatementFromContext(List<XNode> list) {
+    //处理databaseId不为null的情况
     if (configuration.getDatabaseId() != null) {
       buildStatementFromContext(list, configuration.getDatabaseId());
     }
     buildStatementFromContext(list, null);
+    // 上面两块代码，可以简写成 buildStatementFromContext(list, configuration.getDatabaseId());哈哈 可以可以
   }
 
   private void buildStatementFromContext(List<XNode> list, String requiredDatabaseId) {
     for (XNode context : list) {
+      //每个节点创建 XMLStatementBuilder 对象
       final XMLStatementBuilder statementParser = new XMLStatementBuilder(configuration, builderAssistant, context, requiredDatabaseId);
       try {
+        //解析
         statementParser.parseStatementNode();
       } catch (IncompleteElementException e) {
+        //解析失败, 记录起来
         configuration.addIncompleteStatement(statementParser);
       }
     }
   }
 
   private void parsePendingResultMaps() {
+    //获取未解析成功的 ResultMapResolver
     Collection<ResultMapResolver> incompleteResultMaps = configuration.getIncompleteResultMaps();
     synchronized (incompleteResultMaps) {
       Iterator<ResultMapResolver> iter = incompleteResultMaps.iterator();
+      //如果一直都有值, while就一直不退出
       while (iter.hasNext()) {
         try {
+          //迭代解析
           iter.next().resolve();
+          //解析成功, 则移除
           iter.remove();
         } catch (IncompleteElementException e) {
           // ResultMap is still missing a resource...
+          //如果报错, 那就是依然有资源缺少, 忽略
         }
       }
     }
@@ -427,7 +442,11 @@ public class XMLMapperBuilder extends BaseBuilder {
     return builderAssistant.buildDiscriminator(resultType, column, javaTypeClass, jdbcTypeEnum, typeHandlerClass, discriminatorMap);
   }
 
+  /**
+   * 解析sql节点
+   */
   private void sqlElement(List<XNode> list) {
+    //如果有配置dataBeseId, 则获取dataBaseId来处理
     if (configuration.getDatabaseId() != null) {
       sqlElement(list, configuration.getDatabaseId());
     }
@@ -436,25 +455,37 @@ public class XMLMapperBuilder extends BaseBuilder {
 
   private void sqlElement(List<XNode> list, String requiredDatabaseId) {
     for (XNode context : list) {
+      //数据库标识
       String databaseId = context.getStringAttribute("databaseId");
+      //sql片段的id
       String id = context.getStringAttribute("id");
+      // 拼接完整的 id 属性, 格式为 `${namespace}.${id}`
       id = builderAssistant.applyCurrentNamespace(id, false);
+      //检测当前的sql片段添加, 主要从两个方面处理, (dataBaseId是否匹配, sql片段是否已经存在)
       if (databaseIdMatchesCurrent(id, databaseId, requiredDatabaseId)) {
+        //添加或替换sql片段
         sqlFragments.put(id, context);
       }
     }
   }
 
+  /**
+   * 判断dataBaseId是否匹配
+   */
   private boolean databaseIdMatchesCurrent(String id, String databaseId, String requiredDatabaseId) {
+    //如果 requiredDatabaseId 不为空, 则必须匹配上
     if (requiredDatabaseId != null) {
       return requiredDatabaseId.equals(databaseId);
     }
+    //如果requiredDatabaseId为null, 且databaseId不为null, 匹配不上
     if (databaseId != null) {
       return false;
     }
+    //sql片段没有重复, 可以
     if (!this.sqlFragments.containsKey(id)) {
       return true;
     }
+    //如果已经存在这个sql片段, 只有当原来的sql片段的databaseId为null时, 才可以加入或替换
     // skip this fragment if there is a previous one with a not null databaseId
     XNode context = this.sqlFragments.get(id);
     return context.getStringAttribute("databaseId") == null;
@@ -542,20 +573,26 @@ public class XMLMapperBuilder extends BaseBuilder {
   }
 
   private void bindMapperForNamespace() {
+    //获取xml的namespace
     String namespace = builderAssistant.getCurrentNamespace();
     if (namespace != null) {
       Class<?> boundType = null;
       try {
+        //加载这个类是否存在
         boundType = Resources.classForName(namespace);
       } catch (ClassNotFoundException e) {
+        //类不存在没关系, 不是必须的
         //ignore, bound type is not required
       }
       if (boundType != null) {
+        //类存在, 判断有没有加载过
         if (!configuration.hasMapper(boundType)) {
           // Spring may not know the real resource name so we set a flag
           // to prevent loading again this resource from the mapper interface
           // look at MapperAnnotationBuilder#loadXmlResource
+          //标记 namespace的xml文件 已经添加，避免 MapperAnnotationBuilder#loadXmlResource(...) 重复加载
           configuration.addLoadedResource("namespace:" + namespace);
+          //注册Mapper接口
           configuration.addMapper(boundType);
         }
       }

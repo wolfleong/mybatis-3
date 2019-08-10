@@ -50,6 +50,7 @@ import org.apache.ibatis.type.JdbcType;
 import org.apache.ibatis.type.TypeHandler;
 
 /**
+ * 实际上， 如果要不是为了 XMLMapperBuilder 和 MapperAnnotationBuilder 都能调用到这个公用方法，可能都不需要这个类
  * @author Clinton Begin
  */
 public class MapperBuilderAssistant extends BaseBuilder {
@@ -99,20 +100,30 @@ public class MapperBuilderAssistant extends BaseBuilder {
     this.currentNamespace = currentNamespace;
   }
 
+  /**
+   * 拼接完整的 id 属性, 格式为 `${namespace}.${id}`
+   * - 如果是引用的话, 则表示base名称的格式已经判断过了(所有的id都不能有., 除了以`${currentNamespace}.`作为前缀的), 如果有.就代表已经拼接了namespace
+   * - 如果不上引用的话, 就是指配置的id, 配置的id有., 但不是以`${namespace}.`就报错
+   * @param isReference 是否引用
+   */
   public String applyCurrentNamespace(String base, boolean isReference) {
     if (base == null) {
       return null;
     }
+    //引用的base是不可能存在以`${namespace}.`为前缀但又有.的
     if (isReference) {
+      //有点就代表已经拼接了namespace
       // is it qualified with any namespace yet?
       if (base.contains(".")) {
         return base;
       }
     } else {
+      //以`${currentNamespace}.`开始的, 代表已经拼接
       // is it qualified with this namespace yet?
       if (base.startsWith(currentNamespace + ".")) {
         return base;
       }
+      //base名称不能有.
       if (base.contains(".")) {
         throw new BuilderException("Dots are not allowed in element names, please remove it from " + base);
       }
@@ -252,6 +263,7 @@ public class MapperBuilderAssistant extends BaseBuilder {
       JdbcType jdbcType,
       Class<? extends TypeHandler<?>> typeHandler,
       Map<String, String> discriminatorMap) {
+    //给当前鉴别器创建一个ResultMapping
     ResultMapping resultMapping = buildResultMapping(
         resultType,
         null,
@@ -267,12 +279,15 @@ public class MapperBuilderAssistant extends BaseBuilder {
         null,
         null,
         false);
+    //创建 namespaceDiscriminatorMap
     Map<String, String> namespaceDiscriminatorMap = new HashMap<>();
     for (Map.Entry<String, String> e : discriminatorMap.entrySet()) {
       String resultMap = e.getValue();
+      //拼接 namespace
       resultMap = applyCurrentNamespace(resultMap, true);
       namespaceDiscriminatorMap.put(e.getKey(), resultMap);
     }
+    //构建 Discriminator
     return new Discriminator.Builder(configuration, resultMapping, namespaceDiscriminatorMap).build();
   }
 
@@ -403,12 +418,17 @@ public class MapperBuilderAssistant extends BaseBuilder {
       String resultSet,
       String foreignColumn,
       boolean lazy) {
+    //解析一下javaType, 如果javaType为null会自动推断
     Class<?> javaTypeClass = resolveResultJavaType(resultType, property, javaType);
+    //去注册器中拿 TypeHandler, 如果没拿到就创建一个
     TypeHandler<?> typeHandlerInstance = resolveTypeHandler(javaTypeClass, typeHandler);
     List<ResultMapping> composites;
     if ((nestedSelect == null || nestedSelect.isEmpty()) && (foreignColumn == null || foreignColumn.isEmpty())) {
       composites = Collections.emptyList();
     } else {
+      //解析组合字段名称成 ResultMapping 集合。涉及「关联的嵌套查询」
+      //column="{prop1=col1,prop2=col2}"
+      //todo foreignColumn不为null时, 也不应该进来, 这个判断有问题
       composites = parseCompositeColumnName(column);
     }
     return new ResultMapping.Builder(configuration, property, column, javaTypeClass)
@@ -426,6 +446,11 @@ public class MapperBuilderAssistant extends BaseBuilder {
         .build();
   }
 
+  /**
+   * 解notNullColumn的多个值
+   * notNullColumn="{name,age}"
+   * notNullColumn="name,age"
+   */
   private Set<String> parseMultipleColumnNames(String columnName) {
     Set<String> columns = new HashSet<>();
     if (columnName != null) {
@@ -444,22 +469,30 @@ public class MapperBuilderAssistant extends BaseBuilder {
 
   private List<ResultMapping> parseCompositeColumnName(String columnName) {
     List<ResultMapping> composites = new ArrayList<>();
+    //如果column是这些"{prop1=col1,prop2=col2}"值, 则将这些值解析成resultMapping
     if (columnName != null && (columnName.indexOf('=') > -1 || columnName.indexOf(',') > -1)) {
       StringTokenizer parser = new StringTokenizer(columnName, "{}=, ", false);
       while (parser.hasMoreTokens()) {
         String property = parser.nextToken();
         String column = parser.nextToken();
+        //创建resultMapping对象
         ResultMapping complexResultMapping = new ResultMapping.Builder(
             configuration, property, column, configuration.getTypeHandlerRegistry().getUnknownTypeHandler()).build();
+        //暂存起来
         composites.add(complexResultMapping);
       }
     }
+    //返回
     return composites;
   }
 
+  /**
+   * 当 javaType为null时, 自动推断出property的javaType
+   */
   private Class<?> resolveResultJavaType(Class<?> resultType, String property, Class<?> javaType) {
     if (javaType == null && property != null) {
       try {
+        //不支持 Map 类
         MetaClass metaResultType = MetaClass.forClass(resultType, configuration.getReflectorFactory());
         javaType = metaResultType.getSetterType(property);
       } catch (Exception e) {

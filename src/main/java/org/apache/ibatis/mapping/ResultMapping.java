@@ -136,24 +136,31 @@ public class ResultMapping {
       // lock down collections
       resultMapping.flags = Collections.unmodifiableList(resultMapping.flags);
       resultMapping.composites = Collections.unmodifiableList(resultMapping.composites);
+      //如果没有指定TypeHandler, 但是有指定javaType, 则可以通过javaType获取对应的TypeHandler实例
       resolveTypeHandler();
+      //验证配置
       validate();
       return resultMapping;
     }
 
     private void validate() {
+      //嵌套查询和嵌套映射不能同时存在
       // Issue #697: cannot define both nestedQueryId and nestedResultMapId
       if (resultMapping.nestedQueryId != null && resultMapping.nestedResultMapId != null) {
         throw new IllegalStateException("Cannot define both nestedQueryId and nestedResultMapId in property " + resultMapping.property);
       }
+      //不是嵌套查询且不是嵌套映射那就肯定要有typeHandler, 都没有就报错
       // Issue #5: there should be no mappings without typehandler
       if (resultMapping.nestedQueryId == null && resultMapping.nestedResultMapId == null && resultMapping.typeHandler == null) {
         throw new IllegalStateException("No typehandler found for property " + resultMapping.property);
       }
+      //当nestedQueryId不为null, 或者 同时没有nestedQueryId和nestedResultMapId时, column不能为null
+      //也就是当nestedResultMapId不为null时, column才可以不填, 只要填了, 那column和composites两个中肯定有一个有值的
       // Issue #4 and GH #39: column is optional only in nested resultmaps but not in the rest
       if (resultMapping.nestedResultMapId == null && resultMapping.column == null && resultMapping.composites.isEmpty()) {
         throw new IllegalStateException("Mapping is missing column attribute for property " + resultMapping.property);
       }
+      //当有指定结果集时, column和foreignColumn所指定的个数肯定要一样
       if (resultMapping.getResultSet() != null) {
         int numColumns = 0;
         if (resultMapping.column != null) {
@@ -169,6 +176,9 @@ public class ResultMapping {
       }
     }
 
+    /**
+     * //如果没有指定TypeHandler, 但是有指定javaType, 则可以通过javaType获取对应的TypeHandler实例
+     */
     private void resolveTypeHandler() {
       if (resultMapping.typeHandler == null && resultMapping.javaType != null) {
         Configuration configuration = resultMapping.configuration;

@@ -40,9 +40,11 @@ public class Discriminator {
     }
 
     public Discriminator build() {
+      //校验参数
       assert discriminator.resultMapping != null;
       assert discriminator.discriminatorMap != null;
       assert !discriminator.discriminatorMap.isEmpty();
+      //设置不可变
       //lock down map
       discriminator.discriminatorMap = Collections.unmodifiableMap(discriminator.discriminatorMap);
       return discriminator;

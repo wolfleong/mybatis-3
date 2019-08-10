@@ -418,6 +418,7 @@ public class XMLConfigBuilder extends BaseBuilder {
     Environment environment = configuration.getEnvironment();
     //如果 environment 和 databaseIdProvider 都不为null
     if (environment != null && databaseIdProvider != null) {
+      //解析时, 从dataSource中获取数据库标识, 然后确定现在环境所使用的dataBaseId
       String databaseId = databaseIdProvider.getDatabaseId(environment.getDataSource());
       //设置真实的数据库id(数据库名称)
       configuration.setDatabaseId(databaseId);

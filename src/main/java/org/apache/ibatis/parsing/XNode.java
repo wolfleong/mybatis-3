@@ -82,6 +82,13 @@ public class XNode {
     return builder.toString();
   }
 
+  /**
+   * 主要是嵌套resultMap生成唯一id用的
+   * 例子:
+   *  mapper_resultMap[id|value|property]
+   *  mapper_resultMap[earlyNestedDiscriminatorPost]_discriminator_case[1]
+   *  mapper_resultMap[earlyNestedDiscriminatorPost]_discriminator_case[1]_collection[comments]
+   */
   public String getValueBasedIdentifier() {
     StringBuilder builder = new StringBuilder();
     XNode current = this;
