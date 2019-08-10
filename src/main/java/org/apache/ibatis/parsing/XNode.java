@@ -86,6 +86,7 @@ public class XNode {
     StringBuilder builder = new StringBuilder();
     XNode current = this;
     while (current != null) {
+      //不是第一个, 用_拼接
       if (current != this) {
         builder.insert(0, "_");
       }
