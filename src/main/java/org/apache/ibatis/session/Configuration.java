@@ -662,8 +662,11 @@ public class Configuration {
   }
 
   public void addResultMap(ResultMap rm) {
+    //添加到resultMaps集合
     resultMaps.put(rm.getId(), rm);
+    //判断当前ResultMap中的鉴别器中有没有嵌套的ResultMap
     checkLocallyForDiscriminatedNestedResultMaps(rm);
+    // 遍历全局的 ResultMap 集合，若其拥有 Discriminator 对象，则判断是否强制标记为有内嵌的 ResultMap
     checkGloballyForDiscriminatedNestedResultMaps(rm);
   }
 
@@ -876,13 +879,18 @@ public class Configuration {
 
   // Slow but a one time cost. A better solution is welcome.
   protected void checkGloballyForDiscriminatedNestedResultMaps(ResultMap rm) {
+    //如果当前的ResultMap有鉴别器的嵌套ResultMap
     if (rm.hasNestedResultMaps()) {
+      //遍历全局的resultMap
       for (Map.Entry<String, ResultMap> entry : resultMaps.entrySet()) {
         Object value = entry.getValue();
+        //为什么要强转
         if (value instanceof ResultMap) {
           ResultMap entryResultMap = (ResultMap) value;
+          //如果遍历到的ResultMap没有标记有嵌套ResultMap且Discriminator不为null
           if (!entryResultMap.hasNestedResultMaps() && entryResultMap.getDiscriminator() != null) {
             Collection<String> discriminatedResultMapNames = entryResultMap.getDiscriminator().getDiscriminatorMap().values();
+            //如果这个鉴别器有引用到rm这个resultMap, 则将其标记为有鉴别嵌套ResultMap
             if (discriminatedResultMapNames.contains(rm.getId())) {
               entryResultMap.forceNestedResultMaps();
             }
@@ -894,12 +902,19 @@ public class Configuration {
 
   // Slow but a one time cost. A better solution is welcome.
   protected void checkLocallyForDiscriminatedNestedResultMaps(ResultMap rm) {
+    //如果没有嵌套的 ResultMap,  但是有 Discriminator
     if (!rm.hasNestedResultMaps() && rm.getDiscriminator() != null) {
+      //遍历 Discriminator 下的resultMap
       for (Map.Entry<String, String> entry : rm.getDiscriminator().getDiscriminatorMap().entrySet()) {
+        //获取所有的case的resultMap的id
         String discriminatedResultMapName = entry.getValue();
+        //如果存在这个resultMap
         if (hasResultMap(discriminatedResultMapName)) {
+          //获取当前这个 resultMap
           ResultMap discriminatedResultMap = resultMaps.get(discriminatedResultMapName);
+          //如果这个 resultMap 有嵌套的ResultMaps
           if (discriminatedResultMap.hasNestedResultMaps()) {
+            //将当前resultMap标记为有嵌套
             rm.forceNestedResultMaps();
             break;
           }

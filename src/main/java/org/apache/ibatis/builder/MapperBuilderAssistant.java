@@ -226,32 +226,44 @@ public class MapperBuilderAssistant extends BaseBuilder {
       Discriminator discriminator,
       List<ResultMapping> resultMappings,
       Boolean autoMapping) {
+    //拼接完整的id
     id = applyCurrentNamespace(id, false);
+    //拼接完整的extend id
     extend = applyCurrentNamespace(extend, true);
-
+    //如果有继承ResultMap
     if (extend != null) {
+      //配置中没有这个extend的ResultMap, 不给构建
       if (!configuration.hasResultMap(extend)) {
         throw new IncompleteElementException("Could not find a parent resultmap with id '" + extend + "'");
       }
+      //获取继承的resultMap
       ResultMap resultMap = configuration.getResultMap(extend);
+      //重新创建一个extendedResultMappings, 不改动原来配置的
       List<ResultMapping> extendedResultMappings = new ArrayList<>(resultMap.getResultMappings());
+      //清除重复配置的 resultMapping, resultMapping重写了equals方法, 以property字段来对比
       extendedResultMappings.removeAll(resultMappings);
       // Remove parent constructor if this resultMap declares a constructor.
       boolean declaresConstructor = false;
+      //判断继承的resultMap有没有构造器相关的resultMapping
       for (ResultMapping resultMapping : resultMappings) {
         if (resultMapping.getFlags().contains(ResultFlag.CONSTRUCTOR)) {
           declaresConstructor = true;
           break;
         }
       }
+      //如果有声明构造器
       if (declaresConstructor) {
+        //删除构造器相关的 resultMapping
         extendedResultMappings.removeIf(resultMapping -> resultMapping.getFlags().contains(ResultFlag.CONSTRUCTOR));
       }
+      //合并resultMapping
       resultMappings.addAll(extendedResultMappings);
     }
+    //构建resultMap
     ResultMap resultMap = new ResultMap.Builder(configuration, id, type, resultMappings, autoMapping)
         .discriminator(discriminator)
         .build();
+    //添加configuration
     configuration.addResultMap(resultMap);
     return resultMap;
   }

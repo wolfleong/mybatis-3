@@ -80,6 +80,7 @@ public class ResultMap {
     }
 
     public ResultMap build() {
+      //resultMap不为null
       if (resultMap.id == null) {
         throw new IllegalArgumentException("ResultMaps must have an id");
       }
