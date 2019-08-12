@@ -184,13 +184,16 @@ public class ResultMap {
       }
       //如果构造器参数名不为空
       if (!constructorArgNames.isEmpty()) {
+        // constructorArgNames 不一定是按构造器参数顺序的
         final List<String> actualArgNames = argNamesOfMatchingConstructor(constructorArgNames);
+        //参数名返回null, 表示参数名和类型匹配不上构造器
         if (actualArgNames == null) {
           throw new BuilderException("Error in result map '" + resultMap.id
               + "'. Failed to find a constructor in '"
               + resultMap.getType().getName() + "' by arg names " + constructorArgNames
               + ". There might be more info in debug log.");
         }
+        //将构造器的resultMapping按照构造器参数名来排序
         resultMap.constructorResultMappings.sort((o1, o2) -> {
           int paramIdx1 = actualArgNames.indexOf(o1.getProperty());
           int paramIdx2 = actualArgNames.indexOf(o2.getProperty());
@@ -257,7 +260,7 @@ public class ResultMap {
     }
 
     /**
-     * 获取构造器的参数名列表.
+     * 获取构造器的参数名列表(返回的参数是按构造器的参数顺序来的).
      * - 如果有指定@Param参数, 则返回指定的参数名
      * - 如果没有指定参数名, 但启用使用 真正的参数名, 获取真正的参数名使用
      * - 没有指定参数名, 也没有启用使用真正参数名, 返回系统生成的默认名称
