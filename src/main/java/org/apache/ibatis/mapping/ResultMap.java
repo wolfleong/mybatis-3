@@ -232,7 +232,7 @@ public class ResultMap {
     }
 
     /**
-     * 参数类型匹配
+     * 校验参数名对应类型是否匹配
      */
     private boolean argTypesMatch(final List<String> constructorArgNames,
         Class<?>[] paramTypes, List<String> paramNames) {
