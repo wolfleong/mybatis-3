@@ -38,8 +38,17 @@ import org.apache.ibatis.session.Configuration;
  */
 public class XMLStatementBuilder extends BaseBuilder {
 
+  /**
+   * Mapper构建助手
+   */
   private final MapperBuilderAssistant builderAssistant;
+  /**
+   * 当前的XNode节点
+   */
   private final XNode context;
+  /**
+   * 需要的databaseId
+   */
   private final String requiredDatabaseId;
 
   public XMLStatementBuilder(Configuration configuration, MapperBuilderAssistant builderAssistant, XNode context) {
@@ -54,28 +63,45 @@ public class XMLStatementBuilder extends BaseBuilder {
   }
 
   public void parseStatementNode() {
+    //获取节点的id
     String id = context.getStringAttribute("id");
+    //获取dataBaseId
     String databaseId = context.getStringAttribute("databaseId");
 
+    //如果databaseId匹配不上
     if (!databaseIdMatchesCurrent(id, databaseId, this.requiredDatabaseId)) {
       return;
     }
 
+    //获取node节点的名称
     String nodeName = context.getNode().getNodeName();
+    //根据节点名称, 确定sql的类型
     SqlCommandType sqlCommandType = SqlCommandType.valueOf(nodeName.toUpperCase(Locale.ENGLISH));
+    //判定是否是查询类型
     boolean isSelect = sqlCommandType == SqlCommandType.SELECT;
+    //将其设置为 true 后，只要语句被调用，都会导致本地缓存和二级缓存被清空，默认值：false
     boolean flushCache = context.getBooleanAttribute("flushCache", !isSelect);
+    //将其设置为 true 后，将会导致本条语句的结果被二级缓存缓存起来，默认值：对 select 元素为 true
     boolean useCache = context.getBooleanAttribute("useCache", isSelect);
+    //这个设置仅针对嵌套结果 select 语句适用：如果为 true，就是假设包含了嵌套结果集或是分组，
+    // 这样的话当返回一个主结果行的时候，就不会发生有对前面结果集的引用的情况。
+    // 这就使得在获取嵌套的结果集的时候不至于导致内存不够用。默认值：false
+    //todo wolfleong 不懂这个参数的作用 resultOrdered
     boolean resultOrdered = context.getBooleanAttribute("resultOrdered", false);
 
+    //在解析之前, 处理include标签
     // Include Fragments before parsing
     XMLIncludeTransformer includeParser = new XMLIncludeTransformer(configuration, builderAssistant);
     includeParser.applyIncludes(context.getNode());
 
+    //获取parameterType
     String parameterType = context.getStringAttribute("parameterType");
+    //解析parameterType的类
     Class<?> parameterTypeClass = resolveClass(parameterType);
 
+    //获取 lang 配置
     String lang = context.getStringAttribute("lang");
+    //创建 LanguageDriver 对象
     LanguageDriver langDriver = getLanguageDriver(lang);
 
     // Parse selectKey after includes and remove them.
@@ -172,16 +198,21 @@ public class XMLStatementBuilder extends BaseBuilder {
   }
 
   private boolean databaseIdMatchesCurrent(String id, String databaseId, String requiredDatabaseId) {
+    //如果  requiredDatabaseId 不为null, 不相等就匹配不上
     if (requiredDatabaseId != null) {
       return requiredDatabaseId.equals(databaseId);
     }
+    //如果 requiredDatabaseId 为 null, 但 databaseId 不为空, 匹配不上
     if (databaseId != null) {
       return false;
     }
+    //拼接完整的namespace的id
     id = builderAssistant.applyCurrentNamespace(id, false);
+    //如果全局配置上没有这个statement, 则可以
     if (!this.configuration.hasStatement(id, false)) {
       return true;
     }
+    //如果前一个 MappedStatement 不为null, 但它的databaseId是null的话, 可以复盖前面的
     // skip this statement if there is a previous one with a not null databaseId
     MappedStatement previous = this.configuration.getMappedStatement(id, false); // issue #2
     return previous.getDatabaseId() == null;

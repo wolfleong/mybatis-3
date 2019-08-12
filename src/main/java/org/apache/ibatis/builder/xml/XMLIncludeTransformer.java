@@ -31,11 +31,18 @@ import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
 /**
+ * sql语句中<include></include>标签的转换
  * @author Frank D. Martinez [mnesarco]
  */
 public class XMLIncludeTransformer {
 
+  /**
+   * 全局配置
+   */
   private final Configuration configuration;
+  /**
+   * Mapper构建助手
+   */
   private final MapperBuilderAssistant builderAssistant;
 
   public XMLIncludeTransformer(Configuration configuration, MapperBuilderAssistant builderAssistant) {
@@ -43,10 +50,18 @@ public class XMLIncludeTransformer {
     this.builderAssistant = builderAssistant;
   }
 
+  /**
+   *
+   * @param source java 原生的Node
+   */
   public void applyIncludes(Node source) {
+    //创建一个配置复本
     Properties variablesContext = new Properties();
+    //获取全局的配置
     Properties configurationVariables = configuration.getVariables();
+    //如果 configurationVariables 不为null, 拷贝
     Optional.ofNullable(configurationVariables).ifPresent(variablesContext::putAll);
+    //调用真正的 <include> 来转化
     applyIncludes(source, variablesContext, false);
   }
 
@@ -56,7 +71,9 @@ public class XMLIncludeTransformer {
    * @param variablesContext Current context for static variables with values
    */
   private void applyIncludes(Node source, final Properties variablesContext, boolean included) {
+    //如果当前节点是<include>
     if (source.getNodeName().equals("include")) {
+
       Node toInclude = findSqlFragment(getStringAttribute(source, "refid"), variablesContext);
       Properties toIncludeContext = getVariablesContext(source, variablesContext);
       applyIncludes(toInclude, toIncludeContext, true);
@@ -88,6 +105,10 @@ public class XMLIncludeTransformer {
     }
   }
 
+  /**
+   * - 根据sql引用id, 查询sql片段
+   * - refid是可以定义动态变量的${id}
+   */
   private Node findSqlFragment(String refid, Properties variables) {
     refid = PropertyParser.parse(refid, variables);
     refid = builderAssistant.applyCurrentNamespace(refid, true);
@@ -99,7 +120,11 @@ public class XMLIncludeTransformer {
     }
   }
 
+  /**
+   * 获取属性的值
+   */
   private String getStringAttribute(Node node, String name) {
+    //获取属性的值
     return node.getAttributes().getNamedItem(name).getNodeValue();
   }
 
