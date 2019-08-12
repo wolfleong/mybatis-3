@@ -133,7 +133,8 @@ public class ResultMap {
       for (ResultMapping resultMapping : resultMap.resultMappings) {
         //设置这个resultMap是否嵌套子查询, 这里为什么要用 || 呢, 是因为在for中会多次调用
         resultMap.hasNestedQueries = resultMap.hasNestedQueries || resultMapping.getNestedQueryId() != null;
-        //是否有嵌套映射, 只要其中一个resultMapping有, 就算当前ResultMap有嵌套映射了 todo wolfleong 为什么resultSet必须要null
+        //todo wolfleong 为什么resultSet必须要null
+        //是否有嵌套映射, 只要其中一个resultMapping有, 就算当前ResultMap有嵌套映射了
         resultMap.hasNestedResultMaps = resultMap.hasNestedResultMaps || (resultMapping.getNestedResultMapId() != null && resultMapping.getResultSet() == null);
         //获取当前列
         final String column = resultMapping.getColumn();
