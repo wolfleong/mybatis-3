@@ -499,7 +499,7 @@ public class MapperBuilderAssistant extends BaseBuilder {
   }
 
   /**
-   * 当 javaType为null时, 自动推断出property的javaType
+   * 当 javaType为null时, 自动推断出property的javaType, 如果实在找不到, 就返回Object
    */
   private Class<?> resolveResultJavaType(Class<?> resultType, String property, Class<?> javaType) {
     if (javaType == null && property != null) {

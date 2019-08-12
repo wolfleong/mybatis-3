@@ -560,11 +560,19 @@ public class XMLMapperBuilder extends BaseBuilder {
     return null;
   }
 
+  /**
+   * 校验集合
+   * 当是collection类型, 如果返回的类型中没有property这个属性, 则必须设置 javaType和resultMap中的一个
+   * todo 为不明白为什么要这么校验
+   */
   protected void validateCollection(XNode context, Class<?> enclosingType) {
+    //如果是collection, 但resultMap为null, javaType为null
     if ("collection".equals(context.getName()) && context.getStringAttribute("resultMap") == null
       && context.getStringAttribute("javaType") == null) {
       MetaClass metaResultType = MetaClass.forClass(enclosingType, configuration.getReflectorFactory());
       String property = context.getStringAttribute("property");
+      //如果找不到 property的设置器, 表示 当前的ResultMap的返回类型没有property这个字段
+
       if (!metaResultType.hasSetter(property)) {
         throw new BuilderException(
           "Ambiguous collection type for property '" + property + "'. You must specify 'javaType' or 'resultMap'.");

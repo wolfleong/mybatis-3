@@ -30,20 +30,66 @@ import org.apache.ibatis.type.TypeHandlerRegistry;
  */
 public class ResultMapping {
 
+  /**
+   * 全局配置
+   */
   private Configuration configuration;
+  /**
+   * 属性值
+   */
   private String property;
+  /**
+   * 对应数据库的列
+   */
   private String column;
+  /**
+   * 对应的java类型, 不会为null, 最惨就是个 Class<Object>
+   */
   private Class<?> javaType;
+  /**
+   * 对应数据库的列
+   */
   private JdbcType jdbcType;
+  /**
+   * 自定义类型处理器
+   */
   private TypeHandler<?> typeHandler;
+  /**
+   * 嵌套的resultMap的id, 可能是指定resultMap, 也有可能是匿名创建的resultMap的id
+   */
   private String nestedResultMapId;
+  /**
+   * 嵌套子查询
+   */
   private String nestedQueryId;
+  /**
+   * 指定非空列
+   */
   private Set<String> notNullColumns;
+  /**
+   * 列前缀
+   */
   private String columnPrefix;
+  /**
+   * resultMapping的标记, id或者构造器
+   */
   private List<ResultFlag> flags;
+  /**
+   * column="{prop1=column1,prop2=column2}"
+   * 指定多列, 在嵌套子查询, column会指定多列, 解析完成后会创建多个 composites的ResultMapping
+   */
   private List<ResultMapping> composites;
+  /**
+   * 指定resultSet
+   */
   private String resultSet;
+  /**
+   * 指定外键列, 可能多个
+   */
   private String foreignColumn;
+  /**
+   * 是否懒加载
+   */
   private boolean lazy;
 
   ResultMapping() {
