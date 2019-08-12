@@ -102,7 +102,7 @@ public class TypeParameterResolver {
       //T[]
       resolvedComponentType = resolveTypeVar((TypeVariable<?>) componentType, srcType, declaringClass);
     } else if (componentType instanceof GenericArrayType) {
-      //todo 这种情况我也想不出来, 泛型数组的泛型数组是什么鬼
+      //todo wolfleong 这种情况我也想不出来, 泛型数组的泛型数组是什么鬼
       resolvedComponentType = resolveGenericArrayType((GenericArrayType) componentType, srcType, declaringClass);
     } else if (componentType instanceof ParameterizedType) {
       //List<T>[] 或 List<String>[]
@@ -163,7 +163,7 @@ public class TypeParameterResolver {
         //List<? extends List<String>>
         result[i] = resolveParameterizedType((ParameterizedType) bounds[i], srcType, declaringClass);
       } else if (bounds[i] instanceof WildcardType) {
-        //todo List<? extends ?> , 不懂, 想不出来什么例子
+        //todo wolfleong List<? extends ?> , 不懂, 想不出来什么例子
         result[i] = resolveWildcardType((WildcardType) bounds[i], srcType, declaringClass);
       } else {
         result[i] = bounds[i];

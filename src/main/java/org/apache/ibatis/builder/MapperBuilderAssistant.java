@@ -440,7 +440,7 @@ public class MapperBuilderAssistant extends BaseBuilder {
     } else {
       //解析组合字段名称成 ResultMapping 集合。涉及「关联的嵌套查询」
       //column="{prop1=col1,prop2=col2}"
-      //todo foreignColumn不为null时, 也不应该进来, 这个判断有问题
+      //todo wolfleong foreignColumn不为null时, 也不应该进来, 这个判断有问题
       composites = parseCompositeColumnName(column);
     }
     return new ResultMapping.Builder(configuration, property, column, javaTypeClass)
