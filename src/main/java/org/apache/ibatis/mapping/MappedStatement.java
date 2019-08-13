@@ -384,12 +384,16 @@ public final class MappedStatement {
   }
 
   public BoundSql getBoundSql(Object parameterObject) {
+    //sqlSource根据参数, 获取BoundSql
     BoundSql boundSql = sqlSource.getBoundSql(parameterObject);
+    //获取参数映射列表
     List<ParameterMapping> parameterMappings = boundSql.getParameterMappings();
+    //参数映射列表不为空, 则解析出完整的sql, 再创建一个BoundSql返回
     if (parameterMappings == null || parameterMappings.isEmpty()) {
       boundSql = new BoundSql(configuration, boundSql.getSql(), parameterMap.getParameterMappings(), parameterObject);
     }
 
+    //检查每个参数映射, 看有没有嵌套的resultMap, 并且与当前 hasNestedResultMaps 合并
     // check for nested result maps in parameter mappings (issue #30)
     for (ParameterMapping pm : boundSql.getParameterMappings()) {
       String rmId = pm.getResultMapId();
