@@ -137,7 +137,7 @@ public class XMLStatementBuilder extends BaseBuilder {
     Integer fetchSize = context.getIntAttribute("fetchSize");
     //获取超时时间, 驱动程序等待数据库返回请求结果的秒数
     Integer timeout = context.getIntAttribute("timeout");
-    //参数废弃
+    //获取参数 parameterMap
     String parameterMap = context.getStringAttribute("parameterMap");
     //结果类型
     String resultType = context.getStringAttribute("resultType");

@@ -65,10 +65,11 @@ public class MapperBuilderAssistant extends BaseBuilder {
   private final String resource;
   /**
    * 当前的缓存, 有可能是从缓存引用获取的, 有可能是新建的缓存对象
+   * - 如果没有配置, 则为null
    */
   private Cache currentCache;
   /**
-   * 是否未解析缓存
+   * 是否未解析缓存, 主要给 MappedStatement创建的时候用
    */
   private boolean unresolvedCacheRef; // issue #676
 
@@ -325,7 +326,7 @@ public class MapperBuilderAssistant extends BaseBuilder {
       LanguageDriver lang,
       String resultSets) {
 
-    //如果缓存未解析, 则抛异常
+    //如果缓存未解析, 是不能添加MappedStatement的, 则抛异常, 等 缓存解析完先
     if (unresolvedCacheRef) {
       throw new IncompleteElementException("Cache-ref not yet resolved");
     }
@@ -348,13 +349,16 @@ public class MapperBuilderAssistant extends BaseBuilder {
         .lang(lang)
         .resultOrdered(resultOrdered)
         .resultSets(resultSets)
+        //获取resultMap列表且设置statement的ResultMap
         .resultMaps(getStatementResultMaps(resultMap, resultType, id))
         .resultSetType(resultSetType)
         .flushCacheRequired(valueOrDefault(flushCache, !isSelect))
+        //是否使用缓存, 如果是select语句的话, 默认是使用的
         .useCache(valueOrDefault(useCache, isSelect))
         .cache(currentCache);
-    //废弃, 不看
+    //获取参数映射
     ParameterMap statementParameterMap = getStatementParameterMap(parameterMap, parameterType, id);
+    //如果参数映射不为null, 设置
     if (statementParameterMap != null) {
       statementBuilder.parameterMap(statementParameterMap);
     }
@@ -375,16 +379,21 @@ public class MapperBuilderAssistant extends BaseBuilder {
       String parameterMapName,
       Class<?> parameterTypeClass,
       String statementId) {
+    //拼接namespace
     parameterMapName = applyCurrentNamespace(parameterMapName, true);
     ParameterMap parameterMap = null;
+    //如果 parameterMapName 不为null
     if (parameterMapName != null) {
       try {
+        //从configuration中获取parameterMap
         parameterMap = configuration.getParameterMap(parameterMapName);
       } catch (IllegalArgumentException e) {
         throw new IncompleteElementException("Could not find parameter map " + parameterMapName, e);
       }
+      //如果参数类型不为null
     } else if (parameterTypeClass != null) {
       List<ParameterMapping> parameterMappings = new ArrayList<>();
+      //用返回类型构造一个ParameterMap
       parameterMap = new ParameterMap.Builder(
           configuration,
           statementId + "-Inline",
@@ -394,28 +403,39 @@ public class MapperBuilderAssistant extends BaseBuilder {
     return parameterMap;
   }
 
+  /**
+   * 获取sql的语句要返回的ResultMap
+   */
   private List<ResultMap> getStatementResultMaps(
       String resultMap,
       Class<?> resultType,
       String statementId) {
     //resultMap 拼接 namespace
-    //todo 这里有问题, 如果在这里拼接, 下面根据,号切割开的resultMap就没有拼接namespace了
+    //在这里拼接, 下面根据,号切割开的resultMap就没有拼接namespace了
     resultMap = applyCurrentNamespace(resultMap, true);
 
     //resultMap居然可以有多个
     List<ResultMap> resultMaps = new ArrayList<>();
+    //如果指定的resultMap不为null
     if (resultMap != null) {
+      //以逗号切割, 切完后, 只有第一个有拼接namespace, 其他没有拼接namespace, 但也能获取, 因为存 StrictMap 的原因
       String[] resultMapNames = resultMap.split(",");
+      //遍历 resultMap 列表
       for (String resultMapName : resultMapNames) {
         try {
+          //从configuration中根据resultMap的名称获取
           resultMaps.add(configuration.getResultMap(resultMapName.trim()));
         } catch (IllegalArgumentException e) {
+          //取得有问题(取的时候没值, 或者值有重复), 则报错
           throw new IncompleteElementException("Could not find result map '" + resultMapName + "' referenced from '" + statementId + "'", e);
         }
       }
+      //如果resultType不为null
     } else if (resultType != null) {
+      //用resultType创建一个resultMap
       ResultMap inlineResultMap = new ResultMap.Builder(
           configuration,
+          //名称后面加一些标识 -Inline
           statementId + "-Inline",
           resultType,
           new ArrayList<>(),
