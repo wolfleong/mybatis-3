@@ -930,9 +930,18 @@ public class Configuration {
     }
   }
 
+  /**
+   * 严格的Map,
+   * - 长key重复报错
+   * - 取不到值报错
+   * - 短key重复可以存, 取出的时候报错
+   */
   protected static class StrictMap<V> extends HashMap<String, V> {
 
     private static final long serialVersionUID = -4950446264854982944L;
+    /**
+     * 缓存内容的名称
+     */
     private final String name;
     private BiFunction<V, V, String> conflictMessageProducer;
 
@@ -972,27 +981,35 @@ public class Configuration {
     @Override
     @SuppressWarnings("unchecked")
     public V put(String key, V value) {
+      //如果key存在, 则报错
       if (containsKey(key)) {
         throw new IllegalArgumentException(name + " already contains value for " + key
             + (conflictMessageProducer == null ? "" : conflictMessageProducer.apply(super.get(key), value)));
       }
+      //如果有., 表示拼接了namespace
       if (key.contains(".")) {
+        //获取短名, 也就是去掉namespace的名称
         final String shortKey = getShortName(key);
+        //如果集合中不存在, 则添加
         if (super.get(shortKey) == null) {
           super.put(shortKey, value);
         } else {
+          //如果已经存在, 则添加一个模糊对象, 取的时候会报错
           super.put(shortKey, (V) new Ambiguity(shortKey));
         }
       }
+      //添加原始的
       return super.put(key, value);
     }
 
     @Override
     public V get(Object key) {
       V value = super.get(key);
+      //没有值也报错
       if (value == null) {
         throw new IllegalArgumentException(name + " does not contain value for " + key);
       }
+      //如果一个key有多个对象, 报错
       if (value instanceof Ambiguity) {
         throw new IllegalArgumentException(((Ambiguity) value).getSubject() + " is ambiguous in " + name
             + " (try using the full name including the namespace, or rename one of the entries)");
@@ -1012,6 +1029,9 @@ public class Configuration {
       }
     }
 
+    /**
+     * 以最后一个.做分割, 取.最后一个做简短名称
+     */
     private String getShortName(String key) {
       final String[] keyParts = key.split("\\.");
       return keyParts[keyParts.length - 1];
