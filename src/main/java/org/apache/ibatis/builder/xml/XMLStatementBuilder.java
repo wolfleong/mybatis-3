@@ -68,7 +68,7 @@ public class XMLStatementBuilder extends BaseBuilder {
     //获取dataBaseId
     String databaseId = context.getStringAttribute("databaseId");
 
-    //如果databaseId匹配不上
+    //如果databaseId匹配不上, 则不创建
     if (!databaseIdMatchesCurrent(id, databaseId, this.requiredDatabaseId)) {
       return;
     }
@@ -92,6 +92,7 @@ public class XMLStatementBuilder extends BaseBuilder {
     //在解析之前, 替换include标签为引用的sql标签内容
     // Include Fragments before parsing
     XMLIncludeTransformer includeParser = new XMLIncludeTransformer(configuration, builderAssistant);
+    //替换
     includeParser.applyIncludes(context.getNode());
 
     //获取parameterType
@@ -123,7 +124,7 @@ public class XMLStatementBuilder extends BaseBuilder {
       keyGenerator = configuration.getKeyGenerator(keyStatementId);
     } else {
       //如果配置了 useGeneratedKeys 为true, 则用 Jdbc3KeyGenerator, 否则用 NoKeyGenerator 作为 keyGenerator
-      // useGeneratedKeys 的默认值是 配置了 useGeneratedKeys 且是 insert 类型的sql才为true
+      // useGeneratedKeys 的默认值是 配置了 useGeneratedKeys(configuration默认为false) 且是 insert 类型的sql才为true
       //todo wolfleong 到时要看清楚, 是仅对insert和update有用呢, 还是只对insert有用
       keyGenerator = context.getBooleanAttribute("useGeneratedKeys",
           configuration.isUseGeneratedKeys() && SqlCommandType.INSERT.equals(sqlCommandType))
@@ -168,6 +169,7 @@ public class XMLStatementBuilder extends BaseBuilder {
    * <selectKey keyProperty="id" resultType="int" order="BEFORE">
    *     select CAST(RANDOM()*1000000 as INTEGER) a from SYSIBM.SYSDUMMY1
    * </selectKey>
+   * 解析完成后, <selectKey></selectKey>不复存在
    */
   private void processSelectKeyNodes(String id, Class<?> parameterTypeClass, LanguageDriver langDriver) {
     //获取当前节点下的<selectKey>
