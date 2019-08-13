@@ -89,7 +89,7 @@ public class XMLStatementBuilder extends BaseBuilder {
     //todo wolfleong 不懂这个参数的作用 resultOrdered
     boolean resultOrdered = context.getBooleanAttribute("resultOrdered", false);
 
-    //在解析之前, 处理include标签
+    //在解析之前, 替换include标签为引用的sql标签内容
     // Include Fragments before parsing
     XMLIncludeTransformer includeParser = new XMLIncludeTransformer(configuration, builderAssistant);
     includeParser.applyIncludes(context.getNode());

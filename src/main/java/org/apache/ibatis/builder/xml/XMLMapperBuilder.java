@@ -63,7 +63,7 @@ public class XMLMapperBuilder extends BaseBuilder {
    */
   private final MapperBuilderAssistant builderAssistant;
   /**
-   * sql块集合, 如: <sql id="abc">... </sql>
+   * sql块的映射, 带有sql标签的, 如: <sql id="abc">... </sql>
    */
   private final Map<String, XNode> sqlFragments;
   /**
