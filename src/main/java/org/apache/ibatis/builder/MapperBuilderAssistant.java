@@ -325,13 +325,17 @@ public class MapperBuilderAssistant extends BaseBuilder {
       LanguageDriver lang,
       String resultSets) {
 
+    //如果缓存未解析, 则抛异常
     if (unresolvedCacheRef) {
       throw new IncompleteElementException("Cache-ref not yet resolved");
     }
 
+    //拼接namespace
     id = applyCurrentNamespace(id, false);
+    //判断是否是 select 类型的sql
     boolean isSelect = sqlCommandType == SqlCommandType.SELECT;
 
+    //创建MappedStatement 的Builder对象
     MappedStatement.Builder statementBuilder = new MappedStatement.Builder(configuration, id, sqlSource, sqlCommandType)
         .resource(resource)
         .fetchSize(fetchSize)
@@ -349,14 +353,17 @@ public class MapperBuilderAssistant extends BaseBuilder {
         .flushCacheRequired(valueOrDefault(flushCache, !isSelect))
         .useCache(valueOrDefault(useCache, isSelect))
         .cache(currentCache);
-
+    //废弃, 不看
     ParameterMap statementParameterMap = getStatementParameterMap(parameterMap, parameterType, id);
     if (statementParameterMap != null) {
       statementBuilder.parameterMap(statementParameterMap);
     }
 
+    //构造 MappedStatement
     MappedStatement statement = statementBuilder.build();
+    // 将 MappedStatement 添加到全局的 Configuration 中
     configuration.addMappedStatement(statement);
+    //返回创建的 MappedStatement
     return statement;
   }
 
@@ -391,8 +398,11 @@ public class MapperBuilderAssistant extends BaseBuilder {
       String resultMap,
       Class<?> resultType,
       String statementId) {
+    //resultMap 拼接 namespace
+    //todo 这里有问题, 如果在这里拼接, 下面根据,号切割开的resultMap就没有拼接namespace了
     resultMap = applyCurrentNamespace(resultMap, true);
 
+    //resultMap居然可以有多个
     List<ResultMap> resultMaps = new ArrayList<>();
     if (resultMap != null) {
       String[] resultMapNames = resultMap.split(",");
