@@ -154,6 +154,9 @@ public class Configuration {
   protected final Map<String, Cache> caches = new StrictMap<>("Caches collection");
   protected final Map<String, ResultMap> resultMaps = new StrictMap<>("Result Maps collection");
   protected final Map<String, ParameterMap> parameterMaps = new StrictMap<>("Parameter Maps collection");
+  /**
+   * 缓存全局的key生成器
+   */
   protected final Map<String, KeyGenerator> keyGenerators = new StrictMap<>("Key Generators collection");
 
   protected final Set<String> loadedResources = new HashSet<>();
@@ -561,6 +564,7 @@ public class Configuration {
    * @since 3.5.1
    */
   public LanguageDriver getLanguageDriver(Class<? extends LanguageDriver> langClass) {
+    //如果 langClass为null, 返回默认的 LanguageDriver
     if (langClass == null) {
       return languageRegistry.getDefaultDriver();
     }
@@ -621,6 +625,9 @@ public class Configuration {
     return executor;
   }
 
+  /**
+   * 添加一个key生成器
+   */
   public void addKeyGenerator(String id, KeyGenerator keyGenerator) {
     keyGenerators.put(id, keyGenerator);
   }

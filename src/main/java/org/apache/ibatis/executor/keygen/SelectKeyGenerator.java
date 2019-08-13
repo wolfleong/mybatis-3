@@ -31,9 +31,17 @@ import org.apache.ibatis.session.RowBounds;
  * @author Jeff Butler
  */
 public class SelectKeyGenerator implements KeyGenerator {
-
+  /**
+   * select Key 后缀
+   */
   public static final String SELECT_KEY_SUFFIX = "!selectKey";
+  /**
+   * 是否在执行sql前生成
+   */
   private final boolean executeBefore;
+  /**
+   * key生成的sql的封装
+   */
   private final MappedStatement keyStatement;
 
   public SelectKeyGenerator(MappedStatement keyStatement, boolean executeBefore) {
@@ -43,6 +51,7 @@ public class SelectKeyGenerator implements KeyGenerator {
 
   @Override
   public void processBefore(Executor executor, MappedStatement ms, Statement stmt, Object parameter) {
+    //是否在之前执行, 是, 就执行
     if (executeBefore) {
       processGeneratedKeys(executor, ms, parameter);
     }
@@ -50,6 +59,7 @@ public class SelectKeyGenerator implements KeyGenerator {
 
   @Override
   public void processAfter(Executor executor, MappedStatement ms, Statement stmt, Object parameter) {
+    //是否在sql之后执行, 是就执行
     if (!executeBefore) {
       processGeneratedKeys(executor, ms, parameter);
     }

@@ -60,7 +60,7 @@ public class XMLIncludeTransformer {
     Properties variablesContext = new Properties();
     //获取全局的配置
     Properties configurationVariables = configuration.getVariables();
-    //如果 configurationVariables 不为null, 拷贝
+    //如果 configurationVariables 不为null, 拷贝, 保护性拷贝
     Optional.ofNullable(configurationVariables).ifPresent(variablesContext::putAll);
     //调用真正的 <include> 来转化
     applyIncludes(source, variablesContext, false);
