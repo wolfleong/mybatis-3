@@ -557,16 +557,25 @@ public class MapperAnnotationBuilder {
     try {
       //获取sql
       Class<? extends Annotation> sqlAnnotationType = getSqlAnnotationType(method);
+      //获取sqlProvider相关的注解
       Class<? extends Annotation> sqlProviderAnnotationType = getSqlProviderAnnotationType(method);
+      //指定sql操作注解
       if (sqlAnnotationType != null) {
+        //sql操作注解和sqlProvider注解不能同时存在
         if (sqlProviderAnnotationType != null) {
           throw new BindingException("You cannot supply both a static SQL and SqlProvider to method named " + method.getName());
         }
+        //获取注解的实例
         Annotation sqlAnnotation = method.getAnnotation(sqlAnnotationType);
+        //用反射获取注解value的值
         final String[] strings = (String[]) sqlAnnotation.getClass().getMethod("value").invoke(sqlAnnotation);
+        //用sql字符串创建sqlSource对象
         return buildSqlSourceFromStrings(strings, parameterType, languageDriver);
+        //如果是指定sqlProvider
       } else if (sqlProviderAnnotationType != null) {
+        //获取sqlProvider注解
         Annotation sqlProviderAnnotation = method.getAnnotation(sqlProviderAnnotationType);
+        //创建SqlSource对象
         return new ProviderSqlSource(assistant.getConfiguration(), sqlProviderAnnotation, type, method);
       }
       return null;
@@ -575,12 +584,17 @@ public class MapperAnnotationBuilder {
     }
   }
 
+  /**
+   * 拼接sql字符串, 并且创建sqlSource对象
+   */
   private SqlSource buildSqlSourceFromStrings(String[] strings, Class<?> parameterTypeClass, LanguageDriver languageDriver) {
     final StringBuilder sql = new StringBuilder();
+    //拼接sql, 用空格隔开
     for (String fragment : strings) {
       sql.append(fragment);
       sql.append(" ");
     }
+    //创建sqlSource
     return languageDriver.createSqlSource(configuration, sql.toString().trim(), parameterTypeClass);
   }
 

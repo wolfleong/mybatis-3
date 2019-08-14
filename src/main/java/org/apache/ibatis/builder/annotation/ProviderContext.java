@@ -25,8 +25,17 @@ import java.lang.reflect.Method;
  */
 public final class ProviderContext {
 
+  /**
+   * Mapper接口类
+   */
   private final Class<?> mapperType;
+  /**
+   * Mapper接口的方法
+   */
   private final Method mapperMethod;
+  /**
+   * 指定的databaseId
+   */
   private final String databaseId;
 
   /**
