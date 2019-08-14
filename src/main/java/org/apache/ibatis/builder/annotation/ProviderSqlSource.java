@@ -30,6 +30,8 @@ import org.apache.ibatis.scripting.LanguageDriver;
 import org.apache.ibatis.session.Configuration;
 
 /**
+ * 主要的作用是解析ProviderType类的提供sql的方法, 在创建SqlSource之前,
+ * 根据用参数调用providerMethod方法获取sql字符串, 再创建sqlSource
  * @author Clinton Begin
  * @author Kazuki Shimizu
  */
@@ -156,29 +158,51 @@ public class ProviderSqlSource implements SqlSource {
     return sqlSource.getBoundSql(parameterObject);
   }
 
+  /**
+   * @param parameterObject 为什么用Object来接收, 因为单个参数时是Object, 多参数时是Map<String,Object>
+   * @return
+   */
   private SqlSource createSqlSource(Object parameterObject) {
     try {
+      //统计参数个数
       int bindParameterCount = providerMethodParameterTypes.length - (providerContext == null ? 0 : 1);
+      //sql字符串
       String sql;
+      //如果参数类型个数为0, 完全没有参数
       if (providerMethodParameterTypes.length == 0) {
+        //无参数调用
         sql = invokeProviderMethod();
+        //如果参数统计为0, 即没有参数, 但有providerContext
       } else if (bindParameterCount == 0) {
+        //只有一个providerContext为为参数调用
         sql = invokeProviderMethod(providerContext);
+        //如果参数 bindParameterCount=1, 那就是providerMethodParameterTypes是1或者2
       } else if (bindParameterCount == 1
            && (parameterObject == null || providerMethodParameterTypes[providerContextIndex == null || providerContextIndex == 1 ? 0 : 1].isAssignableFrom(parameterObject.getClass()))) {
+        //如果parameterObject是null 或者 parameterObject非空但是参数类型的子类, 才进来
+        //有一个参数的情况下调用
         sql = invokeProviderMethod(extractProviderMethodArguments(parameterObject));
+        //有多个参数
       } else if (parameterObject instanceof Map) {
         @SuppressWarnings("unchecked")
         Map<String, Object> params = (Map<String, Object>) parameterObject;
+        //调用多参数
         sql = invokeProviderMethod(extractProviderMethodArguments(params, providerMethodArgumentNames));
       } else {
+        // 我是这样想的, 单从ProviderSqlSource这个类来说,
+        // 如果当前提供sql的方法的参数是多个, 或者有@Param注解, 那么parameterObject参数一定要Map类型
+        // 但是结合整个mybatis项目来看, Mapper接口的方法如果是多个参数或有@Param注解, 那么肯定是parameterObject类型,
+        // 理论上是不会进入这个else
+        //todo wolfleong 不知什么情况才会进这里来
         throw new BuilderException("Error invoking SqlProvider method ("
                 + providerType.getName() + "." + providerMethod.getName()
                 + "). Cannot invoke a method that holds "
                 + (bindParameterCount == 1 ? "named argument(@Param)" : "multiple arguments")
                 + " using a specifying parameterObject. In this case, please specify a 'java.util.Map' object.");
       }
+      //获取参数类型
       Class<?> parameterType = parameterObject == null ? Object.class : parameterObject.getClass();
+      //用sql字符串, 创建真正的SqlSource返回
       return languageDriver.createSqlSource(configuration, sql, parameterType);
     } catch (BuilderException e) {
       throw e;
@@ -189,20 +213,31 @@ public class ProviderSqlSource implements SqlSource {
     }
   }
 
+  /**
+   *
+   * 提取方法参数, 参数肯定是最多只有两个
+   */
   private Object[] extractProviderMethodArguments(Object parameterObject) {
+    //如果 providerContext 不为null, 则要传providerContext, 有两个参数
     if (providerContext != null) {
       Object[] args = new Object[2];
+      //根据providerContextIndex的值, 设置它的位置
       args[providerContextIndex == 0 ? 1 : 0] = parameterObject;
       args[providerContextIndex] = providerContext;
       return args;
     } else {
+      //当 providerContext 为空时, 就只有一个参数
       return new Object[] { parameterObject };
     }
   }
 
+  /**
+   * 根据参数名列表, 提取参数
+   */
   private Object[] extractProviderMethodArguments(Map<String, Object> params, String[] argumentNames) {
     Object[] args = new Object[argumentNames.length];
     for (int i = 0; i < args.length; i++) {
+      //如果在 providerContextIndex 的位置, 设置 providerContextIndex
       if (providerContextIndex != null && providerContextIndex == i) {
         args[i] = providerContext;
       } else {
@@ -212,8 +247,12 @@ public class ProviderSqlSource implements SqlSource {
     return args;
   }
 
+  /**
+   * 反射执行提供sql的方法
+   */
   private String invokeProviderMethod(Object... args) throws Exception {
     Object targetObject = null;
+    //如果不是静态方法, 创建方法实例
     if (!Modifier.isStatic(providerMethod.getModifiers())) {
       targetObject = providerType.newInstance();
     }
