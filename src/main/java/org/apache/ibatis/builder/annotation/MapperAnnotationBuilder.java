@@ -297,7 +297,11 @@ public class MapperAnnotationBuilder {
     }
   }
 
+  /**
+   * 解析Method获取ResultMapId
+   */
   private String parseResultMap(Method method) {
+    //获取方法返回值
     Class<?> returnType = getReturnType(method);
     ConstructorArgs args = method.getAnnotation(ConstructorArgs.class);
     Results results = method.getAnnotation(Results.class);
@@ -377,45 +381,66 @@ public class MapperAnnotationBuilder {
     LanguageDriver languageDriver = getLanguageDriver(method);
     //创建sqlSource
     SqlSource sqlSource = getSqlSourceFromAnnotations(method, parameterTypeClass, languageDriver);
+    //如果有指定sql, 则肯定有SqlSource
     if (sqlSource != null) {
+      //获取选项配置注解
       Options options = method.getAnnotation(Options.class);
+      //拼接完整的mappedStatementId
       final String mappedStatementId = type.getName() + "." + method.getName();
       Integer fetchSize = null;
       Integer timeout = null;
       StatementType statementType = StatementType.PREPARED;
       ResultSetType resultSetType = null;
+      //获取sql操作类型
       SqlCommandType sqlCommandType = getSqlCommandType(method);
+      //判断是否查询
       boolean isSelect = sqlCommandType == SqlCommandType.SELECT;
+      //非查询默认刷新缓存
       boolean flushCache = !isSelect;
+      //查询默认使用缓存
       boolean useCache = isSelect;
 
       KeyGenerator keyGenerator;
       String keyProperty = null;
       String keyColumn = null;
+      //如果sql操作类型是插入或更新
       if (SqlCommandType.INSERT.equals(sqlCommandType) || SqlCommandType.UPDATE.equals(sqlCommandType)) {
+        //获取selectKey注解
         // first check for SelectKey annotation - that overrides everything else
         SelectKey selectKey = method.getAnnotation(SelectKey.class);
+        //如果selectKey不为null
         if (selectKey != null) {
+          //处理 @SelectKey注解 创建keyGenerator
           keyGenerator = handleSelectKeyAnnotation(selectKey, mappedStatementId, getParameterType(method), languageDriver);
+          //设置keyProperty
           keyProperty = selectKey.keyProperty();
+          //如果选项配置为null
         } else if (options == null) {
+          //取全局配置的默认值
           keyGenerator = configuration.isUseGeneratedKeys() ? Jdbc3KeyGenerator.INSTANCE : NoKeyGenerator.INSTANCE;
         } else {
+          //根据配置进行设置
           keyGenerator = options.useGeneratedKeys() ? Jdbc3KeyGenerator.INSTANCE : NoKeyGenerator.INSTANCE;
           keyProperty = options.keyProperty();
           keyColumn = options.keyColumn();
         }
       } else {
+        //除insert和update外的其他类型, 不需要key生成器
         keyGenerator = NoKeyGenerator.INSTANCE;
       }
 
+      //如果有选项配置
       if (options != null) {
+        //设置flushCache
         if (FlushCachePolicy.TRUE.equals(options.flushCache())) {
           flushCache = true;
         } else if (FlushCachePolicy.FALSE.equals(options.flushCache())) {
           flushCache = false;
         }
+        //设置useCache
         useCache = options.useCache();
+        //如果fetchSize > -1 或者等于 Integer.MIN_VALUE 才设置 fetchSize
+        //todo wolfleong 不懂为什么要 Integer.MIN_VALUE
         fetchSize = options.fetchSize() > -1 || options.fetchSize() == Integer.MIN_VALUE ? options.fetchSize() : null; //issue #348
         timeout = options.timeout() > -1 ? options.timeout() : null;
         statementType = options.statementType();
@@ -423,9 +448,12 @@ public class MapperAnnotationBuilder {
       }
 
       String resultMapId = null;
+      //获取@ResultMap注解
       ResultMap resultMapAnnotation = method.getAnnotation(ResultMap.class);
+      //如果有ResultMap注解, 则直接获取用逗号拼接resultMapId
       if (resultMapAnnotation != null) {
         resultMapId = String.join(",", resultMapAnnotation.value());
+        //如果是查询, 解析ResultMap
       } else if (isSelect) {
         resultMapId = parseResultMap(method);
       }
@@ -599,15 +627,17 @@ public class MapperAnnotationBuilder {
   }
 
   private SqlCommandType getSqlCommandType(Method method) {
+    //获取sql操作注解
     Class<? extends Annotation> type = getSqlAnnotationType(method);
-
+    //如果sql操作注解为null
     if (type == null) {
+      //获取sqlProvider注解
       type = getSqlProviderAnnotationType(method);
-
+      //如果没有找到, 则设置未知操作类型
       if (type == null) {
         return SqlCommandType.UNKNOWN;
       }
-
+      //做相关转换
       if (type == SelectProvider.class) {
         type = Select.class;
       } else if (type == InsertProvider.class) {
@@ -619,6 +649,7 @@ public class MapperAnnotationBuilder {
       }
     }
 
+    //转换成枚举
     return SqlCommandType.valueOf(type.getSimpleName().toUpperCase(Locale.ENGLISH));
   }
 
@@ -747,6 +778,7 @@ public class MapperAnnotationBuilder {
   }
 
   private KeyGenerator handleSelectKeyAnnotation(SelectKey selectKeyAnnotation, String baseStatementId, Class<?> parameterTypeClass, LanguageDriver languageDriver) {
+    //拼接后缀
     String id = baseStatementId + SelectKeyGenerator.SELECT_KEY_SUFFIX;
     Class<?> resultTypeClass = selectKeyAnnotation.resultType();
     StatementType statementType = selectKeyAnnotation.statementType();
@@ -754,6 +786,7 @@ public class MapperAnnotationBuilder {
     String keyColumn = selectKeyAnnotation.keyColumn();
     boolean executeBefore = selectKeyAnnotation.before();
 
+    //@SelectKey不使用缓存
     // defaults
     boolean useCache = false;
     KeyGenerator keyGenerator = NoKeyGenerator.INSTANCE;
@@ -764,17 +797,23 @@ public class MapperAnnotationBuilder {
     String resultMap = null;
     ResultSetType resultSetTypeEnum = null;
 
+    //从sql字符串中创建SqlSource
     SqlSource sqlSource = buildSqlSourceFromStrings(selectKeyAnnotation.statement(), parameterTypeClass, languageDriver);
     SqlCommandType sqlCommandType = SqlCommandType.SELECT;
 
+    //创建MappedStatement
     assistant.addMappedStatement(id, sqlSource, statementType, sqlCommandType, fetchSize, timeout, parameterMap, parameterTypeClass, resultMap, resultTypeClass, resultSetTypeEnum,
         flushCache, useCache, false,
         keyGenerator, keyProperty, keyColumn, null, languageDriver, null);
 
+    //拼接namespace
     id = assistant.applyCurrentNamespace(id, false);
 
+    //创建完之后获取MappedStatement
     MappedStatement keyStatement = configuration.getMappedStatement(id, false);
+    //创建SelectKeyGenerator
     SelectKeyGenerator answer = new SelectKeyGenerator(keyStatement, executeBefore);
+    //添加到全局配置中
     configuration.addKeyGenerator(id, answer);
     return answer;
   }
