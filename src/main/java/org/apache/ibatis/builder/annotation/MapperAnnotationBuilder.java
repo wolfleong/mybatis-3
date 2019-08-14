@@ -92,24 +92,42 @@ import org.apache.ibatis.type.TypeHandler;
 import org.apache.ibatis.type.UnknownTypeHandler;
 
 /**
+ * 注解配置Mapper接口加载
  * @author Clinton Begin
  * @author Kazuki Shimizu
  */
 public class MapperAnnotationBuilder {
 
+  /**
+   * sql操作注解的集合
+   */
   private static final Set<Class<? extends Annotation>> SQL_ANNOTATION_TYPES = new HashSet<>();
+  /**
+   * sql操作提供者集合
+   */
   private static final Set<Class<? extends Annotation>> SQL_PROVIDER_ANNOTATION_TYPES = new HashSet<>();
 
+  /**
+   * 全局配置
+   */
   private final Configuration configuration;
+  /**
+   * Mapper解析助手
+   */
   private final MapperBuilderAssistant assistant;
+  /**
+   * 接口类
+   */
   private final Class<?> type;
 
   static {
+    //初始化sql操作注解的集合
     SQL_ANNOTATION_TYPES.add(Select.class);
     SQL_ANNOTATION_TYPES.add(Insert.class);
     SQL_ANNOTATION_TYPES.add(Update.class);
     SQL_ANNOTATION_TYPES.add(Delete.class);
 
+    //初始化sql操作提供者集合
     SQL_PROVIDER_ANNOTATION_TYPES.add(SelectProvider.class);
     SQL_PROVIDER_ANNOTATION_TYPES.add(InsertProvider.class);
     SQL_PROVIDER_ANNOTATION_TYPES.add(UpdateProvider.class);
@@ -117,32 +135,51 @@ public class MapperAnnotationBuilder {
   }
 
   public MapperAnnotationBuilder(Configuration configuration, Class<?> type) {
+    //将类限定名转换成java文件名
     String resource = type.getName().replace('.', '/') + ".java (best guess)";
+    //创建 Mapper构造助手
     this.assistant = new MapperBuilderAssistant(configuration, resource);
     this.configuration = configuration;
     this.type = type;
   }
 
+  /**
+   * 解析注解
+   */
   public void parse() {
+    //将mapper类名变字符串
     String resource = type.toString();
+    //判断是否已经加载过这个接口, 如果没有加载过, 则加载
+    //如果被xml加载过的, 就不会再往下走了
     if (!configuration.isResourceLoaded(resource)) {
+      //加载Mapper接口可能引用的xml
       loadXmlResource();
+      //记录已经加载过
       configuration.addLoadedResource(resource);
+      //设置当前namespace
       assistant.setCurrentNamespace(type.getName());
+      //解析缓存
       parseCache();
+      //解析缓存引用
       parseCacheRef();
+      //获取接口的方法反射
       Method[] methods = type.getMethods();
+      //遍历方法反射
       for (Method method : methods) {
         try {
+          //如果不是桥接方法
           // issue #237
           if (!method.isBridge()) {
+            //解析MappedStatement
             parseStatement(method);
           }
         } catch (IncompleteElementException e) {
+          //解析不成功, 记录, 等解析完再解析一次 todo wolfleong
           configuration.addIncompleteMethod(new MethodResolver(this, method));
         }
       }
     }
+    //最终再解析一次
     parsePendingMethods();
   }
 
@@ -161,6 +198,9 @@ public class MapperAnnotationBuilder {
     }
   }
 
+  /**
+   * 加载Mapper接口可能对应的xml资源
+   */
   private void loadXmlResource() {
     // Spring may not know the real resource name so we check a flag
     // to prevent loading again a resource twice
@@ -185,43 +225,73 @@ public class MapperAnnotationBuilder {
     }
   }
 
+  /**
+   * 解析注解缓存
+   */
   private void parseCache() {
+    //获取缓存注解
     CacheNamespace cacheDomain = type.getAnnotation(CacheNamespace.class);
+    //如果缓存注解不为null
     if (cacheDomain != null) {
+      //如果size=0, 给null, 不为0则不处理
       Integer size = cacheDomain.size() == 0 ? null : cacheDomain.size();
+      // flushInterval 如果是0给null
       Long flushInterval = cacheDomain.flushInterval() == 0 ? null : cacheDomain.flushInterval();
+      // 将@Property 转换成Properties
       Properties props = convertToProperties(cacheDomain.properties());
+      //创建缓存
       assistant.useNewCache(cacheDomain.implementation(), cacheDomain.eviction(), flushInterval, size, cacheDomain.readWrite(), cacheDomain.blocking(), props);
     }
   }
 
+  /**
+   * 转换注解property
+   */
   private Properties convertToProperties(Property[] properties) {
+    //如果properties长度为0, 返回null
     if (properties.length == 0) {
       return null;
     }
+    //创建Properties
     Properties props = new Properties();
+    //遍历注解
     for (Property property : properties) {
+      //property注解的值替换完动态变量后, 添加到 props
       props.setProperty(property.name(),
           PropertyParser.parse(property.value(), configuration.getVariables()));
     }
+    //返回props
     return props;
   }
 
+  /**
+   * 解析注解缓存引用
+   */
   private void parseCacheRef() {
+    //获取缓引用注解
     CacheNamespaceRef cacheDomainRef = type.getAnnotation(CacheNamespaceRef.class);
+    //注解引用不为nll
     if (cacheDomainRef != null) {
+      //获取引用的Mapper接口
       Class<?> refType = cacheDomainRef.value();
+      //获取引用的名称
       String refName = cacheDomainRef.name();
+      //缓存引用不能两个同时为空
       if (refType == void.class && refName.isEmpty()) {
         throw new BuilderException("Should be specified either value() or name() attribute in the @CacheNamespaceRef");
       }
+      //如果两个配置同时不为空, 也不行
       if (refType != void.class && !refName.isEmpty()) {
         throw new BuilderException("Cannot use both value() and name() attribute in the @CacheNamespaceRef");
       }
+      //优先取 refType的, 取不到再取refName
       String namespace = (refType != void.class) ? refType.getName() : refName;
       try {
+        //解析缓存引用
         assistant.useCacheRef(namespace);
       } catch (IncompleteElementException e) {
+        //解析不成功, 先记录, 等解析完再解析一次
+        //todo wolfleong 注意这里缓存的起来的并没有在外面重新调用
         configuration.addIncompleteCacheRef(new CacheRefResolver(assistant, namespace));
       }
     }
@@ -297,9 +367,15 @@ public class MapperAnnotationBuilder {
     return null;
   }
 
+  /**
+   * 解析Mapper接口的方法成MappedStatement
+   */
   void parseStatement(Method method) {
+    //获取方法参数的类型, 主要是多参数和单个参数的区别
     Class<?> parameterTypeClass = getParameterType(method);
+    //获取 LanguageDriver
     LanguageDriver languageDriver = getLanguageDriver(method);
+    //创建sqlSource
     SqlSource sqlSource = getSqlSourceFromAnnotations(method, parameterTypeClass, languageDriver);
     if (sqlSource != null) {
       Options options = method.getAnnotation(Options.class);
@@ -383,19 +459,29 @@ public class MapperAnnotationBuilder {
   }
 
   private LanguageDriver getLanguageDriver(Method method) {
+    //获取@Lang注解
     Lang lang = method.getAnnotation(Lang.class);
     Class<? extends LanguageDriver> langClass = null;
+    //如果注解不为null, 获取注解的值
     if (lang != null) {
       langClass = lang.value();
     }
+    //获取注解上配置的LanguageDriver类
     return configuration.getLanguageDriver(langClass);
   }
 
+  /**
+   * 获取方法参数的类型
+   */
   private Class<?> getParameterType(Method method) {
     Class<?> parameterType = null;
+    //获取方法参数类型数组
     Class<?>[] parameterTypes = method.getParameterTypes();
+    //遍历方法参数类型
     for (Class<?> currentParameterType : parameterTypes) {
+      //如果不是特殊参数(RowBounds和ResultHandler)
       if (!RowBounds.class.isAssignableFrom(currentParameterType) && !ResultHandler.class.isAssignableFrom(currentParameterType)) {
+        //这样做的意思是, 当有多参数时, 参数类型是ParamMap.class, 如果只有一个参数时, 参数类型就是方法参数的类型
         if (parameterType == null) {
           parameterType = currentParameterType;
         } else {
@@ -464,8 +550,12 @@ public class MapperAnnotationBuilder {
     return returnType;
   }
 
+  /**
+   * 从注解中创建SqlSource对象
+   */
   private SqlSource getSqlSourceFromAnnotations(Method method, Class<?> parameterType, LanguageDriver languageDriver) {
     try {
+      //获取sql
       Class<? extends Annotation> sqlAnnotationType = getSqlAnnotationType(method);
       Class<? extends Annotation> sqlProviderAnnotationType = getSqlProviderAnnotationType(method);
       if (sqlAnnotationType != null) {
@@ -518,14 +608,23 @@ public class MapperAnnotationBuilder {
     return SqlCommandType.valueOf(type.getSimpleName().toUpperCase(Locale.ENGLISH));
   }
 
+  /**
+   * 获取Method方法上, 指定sql操作的注解
+   */
   private Class<? extends Annotation> getSqlAnnotationType(Method method) {
     return chooseAnnotationType(method, SQL_ANNOTATION_TYPES);
   }
 
+  /**
+   * 获取Method方法上, 指定sqlProvider的注解
+   */
   private Class<? extends Annotation> getSqlProviderAnnotationType(Method method) {
     return chooseAnnotationType(method, SQL_PROVIDER_ANNOTATION_TYPES);
   }
 
+  /**
+   * 获取Method方法上指定类型列表的注解
+   */
   private Class<? extends Annotation> chooseAnnotationType(Method method, Set<Class<? extends Annotation>> types) {
     for (Class<? extends Annotation> type : types) {
       Annotation annotation = method.getAnnotation(type);

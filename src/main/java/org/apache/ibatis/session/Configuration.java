@@ -564,10 +564,11 @@ public class Configuration {
    * @since 3.5.1
    */
   public LanguageDriver getLanguageDriver(Class<? extends LanguageDriver> langClass) {
-    //如果 langClass为null, 返回默认的 LanguageDriver
+    //如果langClass为null, 返回默认的 LanguageDriver
     if (langClass == null) {
       return languageRegistry.getDefaultDriver();
     }
+    //如果不为null, 先注册, 后获取
     languageRegistry.register(langClass);
     return languageRegistry.getDriver(langClass);
   }

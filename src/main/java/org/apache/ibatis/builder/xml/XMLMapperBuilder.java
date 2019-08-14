@@ -115,6 +115,7 @@ public class XMLMapperBuilder extends BaseBuilder {
       //绑定当前 Mapper接口
       bindMapperForNamespace();
     }
+    //注意, 每个Mapper都会重新解析一次全局未解析成功的记录
     //迭代重新解析未成功的ResultMap
     parsePendingResultMaps();
     //迭代重新解析未成功的cacheRef
