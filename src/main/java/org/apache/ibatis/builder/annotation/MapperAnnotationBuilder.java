@@ -428,7 +428,7 @@ public class MapperAnnotationBuilder {
    * 解析Mapper接口的方法成MappedStatement
    */
   void parseStatement(Method method) {
-    //获取方法参数的类型, 主要是多参数和单个参数的区别
+    //获取方法参数的类型, 主要是多参数和单个参数的区别, 单参数就是原类型, 多参数是ParamMap
     Class<?> parameterTypeClass = getParameterType(method);
     //获取 LanguageDriver
     LanguageDriver languageDriver = getLanguageDriver(method);
@@ -524,6 +524,7 @@ public class MapperAnnotationBuilder {
           null,
           parameterTypeClass,
           resultMapId,
+          //获取方法返回值作用
           getReturnType(method),
           resultSetType,
           flushCache,
@@ -577,53 +578,86 @@ public class MapperAnnotationBuilder {
   }
 
   private Class<?> getReturnType(Method method) {
+    //获取方法返回类型
     Class<?> returnType = method.getReturnType();
+    //解析返回可能出现的泛型
     Type resolvedReturnType = TypeParameterResolver.resolveReturnType(method, type);
+    //如果返回类型是普通类
     if (resolvedReturnType instanceof Class) {
+      //直接返回
       returnType = (Class<?>) resolvedReturnType;
+      //如果是数组, 返回数组的组件
       if (returnType.isArray()) {
         returnType = returnType.getComponentType();
       }
+      //如果返回类型是 void ，则尝试使用 @ResultType 注解
       // gcode issue #508
       if (void.class.equals(returnType)) {
+        //todo wolfleong 不懂不为什么要这么处理, void 返回值的方法再确定返回值有意义吗
         ResultType rt = method.getAnnotation(ResultType.class);
+        //@ResultType不为null
         if (rt != null) {
+          //获取配置的返回值类型
           returnType = rt.value();
         }
       }
+      //如果解析的值是带泛型的泛型参数
     } else if (resolvedReturnType instanceof ParameterizedType) {
+      //强转
       ParameterizedType parameterizedType = (ParameterizedType) resolvedReturnType;
+      //获取泛型参数的原始类型
       Class<?> rawType = (Class<?>) parameterizedType.getRawType();
+      //如果原始类型是集合或游标
       if (Collection.class.isAssignableFrom(rawType) || Cursor.class.isAssignableFrom(rawType)) {
+        //获取泛型列表
         Type[] actualTypeArguments = parameterizedType.getActualTypeArguments();
+        //如果泛型列表不为null, 且只有一个
         if (actualTypeArguments != null && actualTypeArguments.length == 1) {
+          //获取这个泛型
           Type returnTypeParameter = actualTypeArguments[0];
+          //如果是普通类型就直接返回
           if (returnTypeParameter instanceof Class<?>) {
             returnType = (Class<?>) returnTypeParameter;
+            //如果还是个泛型参数类型
           } else if (returnTypeParameter instanceof ParameterizedType) {
+            //获取这个泛型参数类型的原始类型
             // (gcode issue #443) actual type can be a also a parameterized type
             returnType = (Class<?>) ((ParameterizedType) returnTypeParameter).getRawType();
+            //如果是泛型数组类型
           } else if (returnTypeParameter instanceof GenericArrayType) {
+            //获取数组的组件类型
             Class<?> componentType = (Class<?>) ((GenericArrayType) returnTypeParameter).getGenericComponentType();
+            //创建数组并且获取这个数组的class
             // (gcode issue #525) support List<byte[]>
             returnType = Array.newInstance(componentType, 0).getClass();
           }
         }
+        //如果method方法有@MapKey注解且返回值是Map
       } else if (method.isAnnotationPresent(MapKey.class) && Map.class.isAssignableFrom(rawType)) {
+        //获取泛型列表
         // (gcode issue 504) Do not look into Maps if there is not MapKey annotation
         Type[] actualTypeArguments = parameterizedType.getActualTypeArguments();
+        //不为null且泛型个数为2, 才是Map<K,V>
         if (actualTypeArguments != null && actualTypeArguments.length == 2) {
+          //获取第二个泛型
           Type returnTypeParameter = actualTypeArguments[1];
+          //如果是普通Class, 返回
           if (returnTypeParameter instanceof Class<?>) {
             returnType = (Class<?>) returnTypeParameter;
+            //如果是泛型参数类型
           } else if (returnTypeParameter instanceof ParameterizedType) {
+            //获取泛型参数的原类型
             // (gcode issue 443) actual type can be a also a parameterized type
             returnType = (Class<?>) ((ParameterizedType) returnTypeParameter).getRawType();
           }
         }
+        //如果是Optional类型
       } else if (Optional.class.equals(rawType)) {
+        //获取泛型列表
         Type[] actualTypeArguments = parameterizedType.getActualTypeArguments();
+        //获取第一个泛型
         Type returnTypeParameter = actualTypeArguments[0];
+        //如果泛型普通的类, 则返回
         if (returnTypeParameter instanceof Class<?>) {
           returnType = (Class<?>) returnTypeParameter;
         }
