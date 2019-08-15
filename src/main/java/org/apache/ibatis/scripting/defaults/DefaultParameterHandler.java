@@ -33,16 +33,32 @@ import org.apache.ibatis.type.TypeHandler;
 import org.apache.ibatis.type.TypeHandlerRegistry;
 
 /**
+ * 默认的参数设置实现
  * @author Clinton Begin
  * @author Eduardo Macarron
  */
 public class DefaultParameterHandler implements ParameterHandler {
 
+  /**
+   * TypeHandler注册器
+   */
   private final TypeHandlerRegistry typeHandlerRegistry;
 
+  /**
+   * MappedStatement对象
+   */
   private final MappedStatement mappedStatement;
+  /**
+   * 参数
+   */
   private final Object parameterObject;
+  /**
+   * BoundSql
+   */
   private final BoundSql boundSql;
+  /**
+   * 全局配置
+   */
   private final Configuration configuration;
 
   public DefaultParameterHandler(MappedStatement mappedStatement, Object parameterObject, BoundSql boundSql) {
@@ -61,8 +77,11 @@ public class DefaultParameterHandler implements ParameterHandler {
   @Override
   public void setParameters(PreparedStatement ps) {
     ErrorContext.instance().activity("setting parameters").object(mappedStatement.getParameterMap().getId());
+    //获取参数映射列表
     List<ParameterMapping> parameterMappings = boundSql.getParameterMappings();
+    //如果参数列不为空
     if (parameterMappings != null) {
+      //遍历参数列表
       for (int i = 0; i < parameterMappings.size(); i++) {
         ParameterMapping parameterMapping = parameterMappings.get(i);
         if (parameterMapping.getMode() != ParameterMode.OUT) {
