@@ -345,6 +345,7 @@ public class XMLMapperBuilder extends BaseBuilder {
     Class<?> typeClass = resolveClass(type);
     //如果typeClass没有
     if (typeClass == null) {
+      //自动推断类型
       typeClass = inheritEnclosingType(resultMapNode, enclosingType);
     }
     Discriminator discriminator = null;
@@ -559,6 +560,7 @@ public class XMLMapperBuilder extends BaseBuilder {
       || "case".equals(context.getName())) {
       //select查询是不能嵌套的
       if (context.getStringAttribute("select") == null) {
+        //校验集合
         validateCollection(context, enclosingType);
         //创建一个resultMap
         ResultMap resultMap = resultMapElement(context, resultMappings, enclosingType);
