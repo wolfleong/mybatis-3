@@ -41,8 +41,14 @@ public @interface Arg {
 
   Class<? extends TypeHandler> typeHandler() default UnknownTypeHandler.class;
 
+  /**
+   * 子查询
+   */
   String select() default "";
 
+  /**
+   * 嵌套ResultMap
+   */
   String resultMap() default "";
 
   String name() default "";

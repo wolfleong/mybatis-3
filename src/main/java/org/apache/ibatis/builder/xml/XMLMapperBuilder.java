@@ -330,6 +330,8 @@ public class XMLMapperBuilder extends BaseBuilder {
    * <association javaType="Author"></association>
    * <collection ofType="Post" javaType="ArrayList"></collection>
    * <case resultType="DraftPost"></case>
+   *
+   * @param enclosingType 封装的类型
    */
   private ResultMap resultMapElement(XNode resultMapNode, List<ResultMapping> additionalResultMappings, Class<?> enclosingType) throws Exception {
     ErrorContext.instance().activity("processing " + resultMapNode.getValueBasedIdentifier());
@@ -341,6 +343,7 @@ public class XMLMapperBuilder extends BaseBuilder {
           resultMapNode.getStringAttribute("javaType"))));
     //解析class
     Class<?> typeClass = resolveClass(type);
+    //如果typeClass没有
     if (typeClass == null) {
       typeClass = inheritEnclosingType(resultMapNode, enclosingType);
     }
@@ -390,12 +393,17 @@ public class XMLMapperBuilder extends BaseBuilder {
   }
 
   protected Class<?> inheritEnclosingType(XNode resultMapNode, Class<?> enclosingType) {
+    //如果是 association 标签, 没有填ResultType, 也没有指定 resultMap
     if ("association".equals(resultMapNode.getName()) && resultMapNode.getStringAttribute("resultMap") == null) {
+      //获取property属性名
       String property = resultMapNode.getStringAttribute("property");
+      //封装的类型和属性都不为null
       if (property != null && enclosingType != null) {
+        //直接推断出property的类型
         MetaClass metaResultType = MetaClass.forClass(enclosingType, configuration.getReflectorFactory());
         return metaResultType.getSetterType(property);
       }
+      //如果case标签没有指定resultType, 也没有指定resultMap, 则直接返回封装类
     } else if ("case".equals(resultMapNode.getName()) && resultMapNode.getStringAttribute("resultMap") == null) {
       return enclosingType;
     }

@@ -220,6 +220,9 @@ public class MapperBuilderAssistant extends BaseBuilder {
         .build();
   }
 
+  /**
+   * 添加一个ResultMap
+   */
   public ResultMap addResultMap(
       String id,
       Class<?> type,
@@ -269,6 +272,9 @@ public class MapperBuilderAssistant extends BaseBuilder {
     return resultMap;
   }
 
+  /**
+   * 构建鉴别器
+   */
   public Discriminator buildDiscriminator(
       Class<?> resultType,
       String column,
