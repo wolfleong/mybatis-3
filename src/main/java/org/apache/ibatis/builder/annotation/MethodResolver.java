@@ -18,6 +18,7 @@ package org.apache.ibatis.builder.annotation;
 import java.lang.reflect.Method;
 
 /**
+ * 注解方法解析
  * @author Eduardo Macarron
  */
 public class MethodResolver {
