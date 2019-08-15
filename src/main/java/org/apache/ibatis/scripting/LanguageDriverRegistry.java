@@ -73,7 +73,8 @@ public class LanguageDriverRegistry {
   }
 
   /**
-   * 设置默认的 LanguageDriver
+   * 设置默认的 LanguageDriver, 这个方法被调用了两次, Configuration实例化时设置默认的LanguageDriver,
+   * 还有就 XMLConfigBuilder 解析xml配置文件时
    */
   public void setDefaultDriverClass(Class<? extends LanguageDriver> defaultDriverClass) {
     register(defaultDriverClass);

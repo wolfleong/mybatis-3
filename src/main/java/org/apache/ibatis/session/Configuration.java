@@ -218,7 +218,9 @@ public class Configuration {
     typeAliasRegistry.registerAlias("CGLIB", CglibProxyFactory.class);
     typeAliasRegistry.registerAlias("JAVASSIST", JavassistProxyFactory.class);
 
+    //初始化默认的 LanguageDriver
     languageRegistry.setDefaultDriverClass(XMLLanguageDriver.class);
+    //注册 RawLanguageDriver
     languageRegistry.register(RawLanguageDriver.class);
   }
 

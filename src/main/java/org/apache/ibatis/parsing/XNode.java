@@ -306,7 +306,7 @@ public class XNode {
   }
 
   /**
-   * 获取子节点
+   * 获取子节点, 子节点都是非文本的
    */
   public List<XNode> getChildren() {
     List<XNode> children = new ArrayList<>();

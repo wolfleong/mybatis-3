@@ -18,6 +18,7 @@ package org.apache.ibatis.scripting.xmltags;
 import java.util.List;
 
 /**
+ * 这个节点的作用是, 将多个节点组成一个混合节点, 执行方法时, 迭代所有节点来执行
  * @author Clinton Begin
  */
 public class MixedSqlNode implements SqlNode {
@@ -29,6 +30,7 @@ public class MixedSqlNode implements SqlNode {
 
   @Override
   public boolean apply(DynamicContext context) {
+    //迭代节点一个一个执行
     contents.forEach(node -> node.apply(context));
     return true;
   }

@@ -25,15 +25,35 @@ import java.util.StringTokenizer;
 import org.apache.ibatis.session.Configuration;
 
 /**
+ * <trim></trim> 节点内容封装的SqlNode
  * @author Clinton Begin
  */
 public class TrimSqlNode implements SqlNode {
 
+  /**
+   * 子节点
+   */
   private final SqlNode contents;
+  /**
+   * 前缀
+   */
   private final String prefix;
+  /**
+   * 后缀
+   */
   private final String suffix;
+  /**
+   * prefixOverrides 属性会忽略通过管道分隔的文本序列（注意此例中的空格也是必要的）。
+   * 它的作用是移除所有指定在 prefixOverrides 属性中的内容，并且插入 prefix 属性中指定的内容
+   */
   private final List<String> prefixesToOverride;
+  /**
+   * 作用同上
+   */
   private final List<String> suffixesToOverride;
+  /**
+   * 全局配置
+   */
   private final Configuration configuration;
 
   public TrimSqlNode(Configuration configuration, SqlNode contents, String prefix, String prefixesToOverride, String suffix, String suffixesToOverride) {
@@ -58,14 +78,20 @@ public class TrimSqlNode implements SqlNode {
   }
 
   private static List<String> parseOverrides(String overrides) {
+    //如果 overrides 不为null
     if (overrides != null) {
+      //用 | 来切割
       final StringTokenizer parser = new StringTokenizer(overrides, "|", false);
+      //用存结果的列表
       final List<String> list = new ArrayList<>(parser.countTokens());
+      //遍历
       while (parser.hasMoreTokens()) {
         list.add(parser.nextToken().toUpperCase(Locale.ENGLISH));
       }
+      //返回
       return list;
     }
+    //如果 overrides 是null, 则返回空列表
     return Collections.emptyList();
   }
 
