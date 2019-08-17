@@ -16,11 +16,18 @@
 package org.apache.ibatis.scripting.xmltags;
 
 /**
+ * 主要处理<bind></bind>标签
  * @author Frank D. Martinez [mnesarco]
  */
 public class VarDeclSqlNode implements SqlNode {
 
+  /**
+   * 名字
+   */
   private final String name;
+  /**
+   * 表达式
+   */
   private final String expression;
 
   public VarDeclSqlNode(String var, String exp) {
@@ -30,7 +37,9 @@ public class VarDeclSqlNode implements SqlNode {
 
   @Override
   public boolean apply(DynamicContext context) {
+    //用表达式获取值
     final Object value = OgnlCache.getValue(expression, context.getBindings());
+    //以 name 变量并且放到 DynamicContext 中
     context.bind(name, value);
     return true;
   }

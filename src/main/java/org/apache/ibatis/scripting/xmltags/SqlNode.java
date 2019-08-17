@@ -20,5 +20,8 @@ package org.apache.ibatis.scripting.xmltags;
  * @author Clinton Begin
  */
 public interface SqlNode {
+  /**
+   * 应用当前的 SqlNode 节点, 为什么要返回boolean呢, 主要是 ChooseSqlNode
+   */
   boolean apply(DynamicContext context);
 }

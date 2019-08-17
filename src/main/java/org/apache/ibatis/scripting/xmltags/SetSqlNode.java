@@ -21,6 +21,7 @@ import java.util.List;
 import org.apache.ibatis.session.Configuration;
 
 /**
+ * 处理<set></set>节点
  * @author Clinton Begin
  */
 public class SetSqlNode extends TrimSqlNode {

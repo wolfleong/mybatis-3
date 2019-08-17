@@ -361,7 +361,7 @@ public class XMLScriptBuilder extends BaseBuilder {
       } else if (defaultSqlNodes.size() > 1) {
         throw new BuilderException("Too many default (otherwise) elements in choose statement.");
       }
-      //一个都没有, 返回null
+      //一个都没有, 返回 null
       return defaultSqlNode;
     }
   }
