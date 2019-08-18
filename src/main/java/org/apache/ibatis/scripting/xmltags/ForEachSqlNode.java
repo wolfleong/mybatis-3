@@ -134,7 +134,7 @@ public class ForEachSqlNode implements SqlNode {
       //执行content的应用
       contents.apply(new FilteredDynamicContext(configuration, context, index, item, uniqueNumber));
       if (first) {
-        //todo wolfleong 不懂为什么要这么处理, 直接将 first = false不是更好吗
+        //todo wolfleong 不懂为什么要这么处理, 直接将 first = false 不是更好吗
         first = !((PrefixedContext) context).isPrefixApplied();
       }
       //更新当前content, 为什么要这个呢, 因为当前的context已经是 PrefixedContext,
