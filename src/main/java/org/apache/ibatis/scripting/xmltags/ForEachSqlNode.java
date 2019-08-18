@@ -35,6 +35,9 @@ public class ForEachSqlNode implements SqlNode {
    * 集合的表达式
    */
   private final String collectionExpression;
+  /**
+   * foreach 的子节点
+   */
   private final SqlNode contents;
   /**
    * 前缀
@@ -74,6 +77,13 @@ public class ForEachSqlNode implements SqlNode {
     this.configuration = configuration;
   }
 
+  /**
+   * <foreach item="item" index="index" collection="list"
+   *       open="(" separator="," close=")">
+   *         #{item}
+   *   </foreach>
+   * @param context 这个 context 就是 foreach 里的内容 #{item}
+   */
   @Override
   public boolean apply(DynamicContext context) {
     //获取参数绑定
@@ -124,15 +134,18 @@ public class ForEachSqlNode implements SqlNode {
       //执行content的应用
       contents.apply(new FilteredDynamicContext(configuration, context, index, item, uniqueNumber));
       if (first) {
+        //todo wolfleong 不懂为什么要这么处理, 直接将 first = false不是更好吗
         first = !((PrefixedContext) context).isPrefixApplied();
       }
-      //更新当前content
+      //更新当前content, 为什么要这个呢, 因为当前的context已经是 PrefixedContext,
+      // 要这个 PrefixedContext 变回最原始的 DynamicContext
       context = oldContext;
       //编号增加
       i++;
     }
     //插入close到sql的结尾
     applyClose(context);
+    //item和index每次都会复盖, 退出for后, 要删除最后一个
     //删除item
     context.getBindings().remove(item);
     //删除index
@@ -148,6 +161,8 @@ public class ForEachSqlNode implements SqlNode {
    */
   private void applyIndex(DynamicContext context, Object o, int i) {
     if (index != null) {
+      //我猜可能是子节点可能用到 ${index}
+      //todo wolfleong 不懂这个 index 这个bind 的作用
       context.bind(index, o);
       context.bind(itemizeItem(index, i), o);
     }
@@ -161,6 +176,8 @@ public class ForEachSqlNode implements SqlNode {
    */
   private void applyItem(DynamicContext context, Object o, int i) {
     if (item != null) {
+      //我猜可能是子节点可能用到 ${item}
+      //todo wolfleong 不懂这个 index 这个bind 的作用
       context.bind(item, o);
       context.bind(itemizeItem(item, i), o);
     }
@@ -237,6 +254,7 @@ public class ForEachSqlNode implements SqlNode {
         String newContent = content.replaceFirst("^\\s*" + item + "(?![^.,:\\s])", itemizeItem(item, index));
         //如果itemIndex不为null且newContent与原来一样, 即没有替换
         if (itemIndex != null && newContent.equals(content)) {
+          // 将对 itemIndex 的访问，替换成 itemizeItem(itemIndex, index), 即 #{index} => __frch_${index}_${i}
           newContent = content.replaceFirst("^\\s*" + itemIndex + "(?![^.,:\\s])", itemizeItem(itemIndex, index));
         }
         return "#{" + newContent + "}";
