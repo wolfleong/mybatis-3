@@ -24,6 +24,8 @@ import ognl.MemberAccess;
 import org.apache.ibatis.reflection.Reflector;
 
 /**
+ * todo wolfleong 不懂, 这块需要深入了解一下ognl
+ * OGNL 成员访问器实现类
  * The {@link MemberAccess} class that based on <a href=
  * 'https://github.com/jkuhnert/ognl/blob/OGNL_3_2_1/src/java/ognl/DefaultMemberAccess.java'>DefaultMemberAccess</a>.
  *
@@ -36,6 +38,9 @@ import org.apache.ibatis.reflection.Reflector;
  */
 class OgnlMemberAccess implements MemberAccess {
 
+  /**
+   * 是否可以修改成员的可访问
+   */
   private final boolean canControlMemberAccessible;
 
   OgnlMemberAccess() {
@@ -45,10 +50,14 @@ class OgnlMemberAccess implements MemberAccess {
   @Override
   public Object setup(Map context, Object target, Member member, String propertyName) {
     Object result = null;
+    //判断是否可修改
     if (isAccessible(context, target, member, propertyName)) {
       AccessibleObject accessible = (AccessibleObject) member;
+      //不可访问则设置为可访问
       if (!accessible.isAccessible()) {
+        //标记原来是不可访问的
         result = Boolean.FALSE;
+        //设置为可访问
         accessible.setAccessible(true);
       }
     }
@@ -59,6 +68,7 @@ class OgnlMemberAccess implements MemberAccess {
   public void restore(Map context, Object target, Member member, String propertyName,
       Object state) {
     if (state != null) {
+      // 修改为原来的可访问
       ((AccessibleObject) member).setAccessible((Boolean) state);
     }
   }
