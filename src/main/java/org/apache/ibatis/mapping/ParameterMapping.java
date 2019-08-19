@@ -23,20 +23,51 @@ import org.apache.ibatis.type.TypeHandler;
 import org.apache.ibatis.type.TypeHandlerRegistry;
 
 /**
+ * 参数映射配置
  * @author Clinton Begin
  */
 public class ParameterMapping {
 
+  /**
+   * 全局配置
+   */
   private Configuration configuration;
 
+  /**
+   * 属性名
+   */
   private String property;
+  /**
+   * 参数 Mode
+   */
   private ParameterMode mode;
+  /**
+   * JavaType, 默认是Object
+   */
   private Class<?> javaType = Object.class;
+  /**
+   * JdbcType类型
+   */
   private JdbcType jdbcType;
+  /**
+   * 参数精度
+   */
   private Integer numericScale;
+  /**
+   * TypeHandler
+   */
   private TypeHandler<?> typeHandler;
+  /**
+   * ResultMapId
+   */
   private String resultMapId;
+  /**
+   * jdbcTypeName
+   */
   private String jdbcTypeName;
+  /**
+   * 暂未支持, 先不管
+   */
   private String expression;
 
   private ParameterMapping() {
@@ -100,12 +131,14 @@ public class ParameterMapping {
     }
 
     public ParameterMapping build() {
+      //自动推断TypeHandler, 如果TypeHandler为null, 且JavaType不为null
       resolveTypeHandler();
       validate();
       return parameterMapping;
     }
 
     private void validate() {
+      //如果JavaType是 ResultSet, 则必需指定 resultMapId
       if (ResultSet.class.equals(parameterMapping.javaType)) {
         if (parameterMapping.resultMapId == null) {
           throw new IllegalStateException("Missing resultmap in property '"
@@ -113,6 +146,7 @@ public class ParameterMapping {
               + "Parameters of type java.sql.ResultSet require a resultmap.");
         }
       } else {
+        //最终的TypeHandler是不能为null的
         if (parameterMapping.typeHandler == null) {
           throw new IllegalStateException("Type handler was null on parameter mapping for property '"
             + parameterMapping.property + "'. It was either not specified and/or could not be found for the javaType ("
@@ -121,10 +155,17 @@ public class ParameterMapping {
       }
     }
 
+    /**
+     * 解析TypeHandler
+     */
     private void resolveTypeHandler() {
+      //如果 JavaType 不为null, 但是 typeHandler 为null 的话, 自动推断出 TypeHandler
       if (parameterMapping.typeHandler == null && parameterMapping.javaType != null) {
+        //获取配置
         Configuration configuration = parameterMapping.configuration;
+        //获取TypeHandler注册器
         TypeHandlerRegistry typeHandlerRegistry = configuration.getTypeHandlerRegistry();
+        //用JavaType和jdbcType去获取 TypeHandler
         parameterMapping.typeHandler = typeHandlerRegistry.getTypeHandler(parameterMapping.javaType, parameterMapping.jdbcType);
       }
     }
