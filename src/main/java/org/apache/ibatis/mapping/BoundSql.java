@@ -61,15 +61,26 @@ public class BoundSql {
     return parameterObject;
   }
 
+  /**
+   * 判断属性是否存在 additional 参数中
+   */
   public boolean hasAdditionalParameter(String name) {
+    //获取第一层属性名
     String paramName = new PropertyTokenizer(name).getName();
+    //判断是否存在
     return additionalParameters.containsKey(paramName);
   }
 
+  /**
+   * 添加 additional 参数
+   */
   public void setAdditionalParameter(String name, Object value) {
     metaParameters.setValue(name, value);
   }
 
+  /**
+   * 获取 additional 参数
+   */
   public Object getAdditionalParameter(String name) {
     return metaParameters.getValue(name);
   }
