@@ -21,6 +21,8 @@ import org.apache.ibatis.mapping.SqlSource;
 import org.apache.ibatis.session.Configuration;
 
 /**
+ * 适用于使用了 OGNL 表达式，或者使用了 ${} 表达式的 SQL ，所以它是动态的，
+ * 需要在每次执行 #getBoundSql(Object parameterObject) 方法，根据参数，生成对应的 SQL 。
  * @author Clinton Begin
  */
 public class DynamicSqlSource implements SqlSource {
@@ -35,12 +37,19 @@ public class DynamicSqlSource implements SqlSource {
 
   @Override
   public BoundSql getBoundSql(Object parameterObject) {
+    //创建相关的 DynamicContext
     DynamicContext context = new DynamicContext(configuration, parameterObject);
+    //应用 sqlNode
     rootSqlNode.apply(context);
+    //创建 SqlSourceBuilder
     SqlSourceBuilder sqlSourceParser = new SqlSourceBuilder(configuration);
+    //获取参数类型
     Class<?> parameterType = parameterObject == null ? Object.class : parameterObject.getClass();
+    //解析出来 sqlSource 对象, 实际上是StaticSqlSource对象
     SqlSource sqlSource = sqlSourceParser.parse(context.getSql(), parameterType, context.getBindings());
+    //获取BoundSql
     BoundSql boundSql = sqlSource.getBoundSql(parameterObject);
+    //设置额外绑定的参数, 因为在 ForEachSqlNode和 VarDeclSqlNode 中会添加一些非用户传的的参数进来
     context.getBindings().forEach(boundSql::setAdditionalParameter);
     return boundSql;
   }
