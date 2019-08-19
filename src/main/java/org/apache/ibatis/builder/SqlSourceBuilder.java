@@ -107,7 +107,7 @@ public class SqlSourceBuilder extends BaseBuilder {
     private ParameterMapping buildParameterMapping(String content) {
       //将所有参数的所有配置组成的Map
       Map<String, String> propertiesMap = parseParameterMapping(content);
-      //获取property属性名, 没有判断 property是否为null
+      //获取property属性名, 不需要判断 property是否为null, 当没有property时, 获取肯定报错
       String property = propertiesMap.get("property");
       //属性的类型
       Class<?> propertyType;

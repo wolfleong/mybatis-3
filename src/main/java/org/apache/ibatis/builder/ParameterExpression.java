@@ -198,7 +198,7 @@ public class ParameterExpression extends HashMap<String, String> {
   }
 
   /**
-   * 去掉前后的空格
+   * 去掉前后的空格, 如果没有值或者都是空串, 这里会报错
    * @param str 字符串
    * @param start 开始索引
    * @param end 结束索引
