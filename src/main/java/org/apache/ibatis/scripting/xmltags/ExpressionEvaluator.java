@@ -24,29 +24,44 @@ import java.util.Map;
 import org.apache.ibatis.builder.BuilderException;
 
 /**
+ * OGNL 表达式计算器
  * @author Clinton Begin
  */
 public class ExpressionEvaluator {
 
+  /**
+   * 获取表达式的 boolean 值
+   */
   public boolean evaluateBoolean(String expression, Object parameterObject) {
+    //获取表达式的值
     Object value = OgnlCache.getValue(expression, parameterObject);
+    //如果是boolean, 则直接返回
     if (value instanceof Boolean) {
       return (Boolean) value;
     }
+    //如果是数字, 则不为0则为真
     if (value instanceof Number) {
       return new BigDecimal(String.valueOf(value)).compareTo(BigDecimal.ZERO) != 0;
     }
+    //不为null则为真
     return value != null;
   }
 
+  /**
+   * 获取表达式对应的集合
+   */
   public Iterable<?> evaluateIterable(String expression, Object parameterObject) {
+    //获取表达
     Object value = OgnlCache.getValue(expression, parameterObject);
+    //如果值为null, 则报错
     if (value == null) {
       throw new BuilderException("The expression '" + expression + "' evaluated to a null value.");
     }
+    //如果是 Iterable 直接返回
     if (value instanceof Iterable) {
       return (Iterable<?>) value;
     }
+    //如果是数组, 则将数组变列表, 再返回
     if (value.getClass().isArray()) {
       // the array may be primitive, so Arrays.asList() may throw
       // a ClassCastException (issue 209).  Do the work manually
@@ -59,6 +74,7 @@ public class ExpressionEvaluator {
       }
       return answer;
     }
+    //如果是Map, 则返回 Map.EntrySet
     if (value instanceof Map) {
       return ((Map) value).entrySet();
     }
