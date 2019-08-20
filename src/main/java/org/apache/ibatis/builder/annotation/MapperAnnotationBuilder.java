@@ -569,6 +569,7 @@ public class MapperAnnotationBuilder {
         if (parameterType == null) {
           parameterType = currentParameterType;
         } else {
+          //多参数时, 参数类型为 ParamMap.class
           // issue #135
           parameterType = ParamMap.class;
         }

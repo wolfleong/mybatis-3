@@ -25,6 +25,9 @@ import org.apache.ibatis.session.Configuration;
 
 /**
  * 主要做一个通用的判断, 如果参数为空, 则根据JdbcType的类型设置一个空值
+ * - JDBC规定, 如果设置null值, 则要必须指定jdbcType
+ * - 根据JavaType可以推断出默认的TypeHandler, 但是根据JavaType是推断不出jdbcType的, 因为一个JavaType有多个jdbcType,
+ *   所以当有null作为参数时, 必须要指定jdbcType, 这是从TypeHandlerRegistry的存储结构考虑的(Map<Class,Map<JdbcType,TypeHandler>>)
  * The base {@link TypeHandler} for references a generic type.
  * <p>
  * Important: Since 3.5.0, This class never call the {@link ResultSet#wasNull()} and
@@ -55,10 +58,12 @@ public abstract class BaseTypeHandler<T> extends TypeReference<T> implements Typ
   @Override
   public void setParameter(PreparedStatement ps, int i, T parameter, JdbcType jdbcType) throws SQLException {
     if (parameter == null) {
+      //如果指定jdbcType为null, 抛异常
       if (jdbcType == null) {
         throw new TypeException("JDBC requires that the JdbcType must be specified for all nullable parameters.");
       }
       try {
+        //根据jdbcType设置null值
         ps.setNull(i, jdbcType.TYPE_CODE);
       } catch (SQLException e) {
         throw new TypeException("Error setting null for parameter #" + i + " with JdbcType " + jdbcType + " . "
@@ -67,6 +72,7 @@ public abstract class BaseTypeHandler<T> extends TypeReference<T> implements Typ
       }
     } else {
       try {
+        //设置非空参数
         setNonNullParameter(ps, i, parameter, jdbcType);
       } catch (Exception e) {
         throw new TypeException("Error setting non null for parameter #" + i + " with JdbcType " + jdbcType + " . "

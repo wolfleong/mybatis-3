@@ -57,7 +57,7 @@ public final class TypeHandlerRegistry {
    */
   private final Map<JdbcType, TypeHandler<?>> jdbcTypeHandlerMap = new EnumMap<>(JdbcType.class);
   /**
-   * 存JavaType和TypeHandler的关系, 一个JavaType可以对应多个JdbcType的TypeHandler,
+   * 存JavaType和TypeHandler的关系, 一个JavaType可以对应多个JdbcType的TypeHandler, 一个TypeHandler可以对应多个jdbcType
    * JdbcType为null的TypeHandler为JavaType的默认TypeHandler
    *
    */
@@ -228,23 +228,33 @@ public final class TypeHandlerRegistry {
     return getTypeHandler(javaTypeReference.getRawType(), jdbcType);
   }
 
+  /**
+   * 根据 JavaType 和 JdbcType 获取 TypeHandler, JdbcType 可能为null
+   */
   @SuppressWarnings("unchecked")
   private <T> TypeHandler<T> getTypeHandler(Type type, JdbcType jdbcType) {
+    //多参数类型时, 参数为 ParamMap, 没有TypeHandler
     if (ParamMap.class.equals(type)) {
       return null;
     }
+    //先根据 JavaType 获取 jdbcHandlerMap
     Map<JdbcType, TypeHandler<?>> jdbcHandlerMap = getJdbcHandlerMap(type);
     TypeHandler<?> handler = null;
+    //如果 jdbcHandlerMap
     if (jdbcHandlerMap != null) {
+      //根据 jdbcType 获取 TypeHandler
       handler = jdbcHandlerMap.get(jdbcType);
+      //获取不到时, 再根据 null 的 JdbcType 获取 TypeHandler
       if (handler == null) {
         handler = jdbcHandlerMap.get(null);
       }
+      //实在找不到, 从众多的 jdbcType 中挑选一个 TypeHandler 返回
       if (handler == null) {
         // #591
         handler = pickSoleHandler(jdbcHandlerMap);
       }
     }
+    //强转成指定的类型
     // type drives generics here
     return (TypeHandler<T>) handler;
   }
