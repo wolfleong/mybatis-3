@@ -116,7 +116,7 @@ public class DefaultParameterHandler implements ParameterHandler {
           JdbcType jdbcType = parameterMapping.getJdbcType();
           //如果值为null, 或者jdbcType为null
           if (value == null && jdbcType == null) {
-            //则给定一个默认的jdbcType的尝试
+            //则给定一个默认的jdbcType的尝试, 根据 JavaType 是没办法推断出 JdbcType 的, 所以当没有设置JdbcType是, 只能给一个通用的
             jdbcType = configuration.getJdbcTypeForNull();
           }
           try {
