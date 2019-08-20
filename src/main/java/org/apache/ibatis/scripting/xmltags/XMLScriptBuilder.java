@@ -40,7 +40,7 @@ public class XMLScriptBuilder extends BaseBuilder {
    */
   private final XNode context;
   /**
-   * 是否动态
+   * 是否动态, 有${}或者有节点就算动态
    */
   private boolean isDynamic;
   /**
@@ -120,7 +120,7 @@ public class XMLScriptBuilder extends BaseBuilder {
         if (textSqlNode.isDynamic()) {
           //添加到列表
           contents.add(textSqlNode);
-          //是否动态
+          //是否动态, 只要有${}动态变量的
           isDynamic = true;
         } else {
           //如果非动态, 则添加一个纯静态态的SqlNode
@@ -138,7 +138,7 @@ public class XMLScriptBuilder extends BaseBuilder {
         }
         //用节点处理器处理当前了节点
         handler.handleNode(child, contents);
-        //设置动态
+        //设置动态, 只要有节点的
         isDynamic = true;
       }
     }
