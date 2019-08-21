@@ -47,6 +47,9 @@ import org.apache.ibatis.type.TypeHandlerRegistry;
 /**
  * 实现 Executor 接口，提供骨架方法，从而使子类只要实现指定的几个抽象方法即可.
  * 通用逻辑的抽象类
+ * - 维护缓存/延迟加载队列/事务对象等属性
+ * - 在查询时, 对查询结果做一级缓存处理
+ * - 刷新时或关闭或更新时, 清空缓存
  * @author Clinton Begin
  */
 public abstract class BaseExecutor implements Executor {
