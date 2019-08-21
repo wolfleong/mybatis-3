@@ -603,9 +603,22 @@ public class Configuration {
     return resultSetHandler;
   }
 
+  /**
+   * 创建 StatementHandler 对象
+   * @param executor Executor 对象
+   * @param mappedStatement mappedStatement
+   * @param parameterObject 参数对象
+   * @param rowBounds 分页对象
+   * @param resultHandler 结果处理器
+   * @param boundSql boundSql
+   * @return StatementHandler
+   */
   public StatementHandler newStatementHandler(Executor executor, MappedStatement mappedStatement, Object parameterObject, RowBounds rowBounds, ResultHandler resultHandler, BoundSql boundSql) {
+    //创建 RoutingStatementHandler
     StatementHandler statementHandler = new RoutingStatementHandler(executor, mappedStatement, parameterObject, rowBounds, resultHandler, boundSql);
+    //应用所有插件
     statementHandler = (StatementHandler) interceptorChain.pluginAll(statementHandler);
+    //返回 StatementHandler
     return statementHandler;
   }
 

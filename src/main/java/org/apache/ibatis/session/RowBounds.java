@@ -22,6 +22,9 @@ public class RowBounds {
 
   public static final int NO_ROW_OFFSET = 0;
   public static final int NO_ROW_LIMIT = Integer.MAX_VALUE;
+  /**
+   * 默认的行范围
+   */
   public static final RowBounds DEFAULT = new RowBounds();
 
   private final int offset;
