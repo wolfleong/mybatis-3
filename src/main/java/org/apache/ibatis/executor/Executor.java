@@ -79,7 +79,7 @@ public interface Executor {
   CacheKey createCacheKey(MappedStatement ms, Object parameterObject, RowBounds rowBounds, BoundSql boundSql);
 
   /**
-   * 判断是否缓存
+   * 判断指定的key是否有缓存
    */
   boolean isCached(MappedStatement ms, CacheKey key);
 

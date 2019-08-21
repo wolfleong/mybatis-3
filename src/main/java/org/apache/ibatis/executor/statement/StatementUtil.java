@@ -19,6 +19,7 @@ import java.sql.SQLException;
 import java.sql.Statement;
 
 /**
+ * Statement 工具类
  * Utility for {@link java.sql.Statement}.
  *
  * @since 3.4.0
@@ -31,6 +32,7 @@ public class StatementUtil {
   }
 
   /**
+   * queryTimeout 为 statement中已经设置的
    * Apply a transaction timeout.
    * <p>
    * Update a query timeout to apply a transaction timeout.
@@ -41,15 +43,19 @@ public class StatementUtil {
    * @throws SQLException if a database access error occurs, this method is called on a closed <code>Statement</code>
    */
   public static void applyTransactionTimeout(Statement statement, Integer queryTimeout, Integer transactionTimeout) throws SQLException {
+    //如果超时时间为null, 不做处理
     if (transactionTimeout == null){
       return;
     }
     Integer timeToLiveOfQuery = null;
+    //如果 queryTimeout 时间未设置, 则取 transactionTimeout
     if (queryTimeout == null || queryTimeout == 0) {
       timeToLiveOfQuery = transactionTimeout;
+      //如果 queryTimeout 时间有设置, 当 transactionTimeout 比 queryTimeout 小时, 才取 transactionTimeout
     } else if (transactionTimeout < queryTimeout) {
       timeToLiveOfQuery = transactionTimeout;
     }
+    //如果要设置的时候不为null, 设置查询超时时间
     if (timeToLiveOfQuery != null) {
       statement.setQueryTimeout(timeToLiveOfQuery);
     }

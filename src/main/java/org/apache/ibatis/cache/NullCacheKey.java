@@ -16,6 +16,7 @@
 package org.apache.ibatis.cache;
 
 /**
+ * 缓存键的空实现
  * @author Clinton Begin
  */
 public final class NullCacheKey extends CacheKey {
