@@ -64,7 +64,7 @@ public class ReuseExecutor extends BaseExecutor {
 
   @Override
   public <E> List<E> doQuery(MappedStatement ms, Object parameter, RowBounds rowBounds, ResultHandler resultHandler, BoundSql boundSql) throws SQLException {
-    //操作与 SimpleExecutor 一样
+    //操作与 SimpleExecutor 一样, 但执行完后不关闭 Statement
     Configuration configuration = ms.getConfiguration();
     StatementHandler handler = configuration.newStatementHandler(wrapper, ms, parameter, rowBounds, resultHandler, boundSql);
     Statement stmt = prepareStatement(handler, ms.getStatementLog());
@@ -73,13 +73,18 @@ public class ReuseExecutor extends BaseExecutor {
 
   @Override
   protected <E> Cursor<E> doQueryCursor(MappedStatement ms, Object parameter, RowBounds rowBounds, BoundSql boundSql) throws SQLException {
-    //操作与 SimpleExecutor 一样
+    //操作与 SimpleExecutor 一样, 但执行完后不关闭 Statement
     Configuration configuration = ms.getConfiguration();
     StatementHandler handler = configuration.newStatementHandler(wrapper, ms, parameter, rowBounds, null, boundSql);
     Statement stmt = prepareStatement(handler, ms.getStatementLog());
     return handler.queryCursor(stmt);
   }
 
+  /**
+   * - ReuseExecutor 考虑到重用性，但是 Statement 最终还是需要有地方关闭。答案就在 #doFlushStatements(boolean isRollback) 方法中。
+   * 而 BaseExecutor 在关闭 #close() 方法中，最终也会调用该方法，从而完成关闭缓存的 Statement 对象们.
+   * - 另外，BaseExecutor 在提交或者回滚事务方法中，最终也会调用该方法，也能完成关闭缓存的 Statement 对象们
+   */
   @Override
   public List<BatchResult> doFlushStatements(boolean isRollback) {
     //遍历缓存的所有 Statement
@@ -103,7 +108,7 @@ public class ReuseExecutor extends BaseExecutor {
     if (hasStatementFor(sql)) {
       //如果存在, 则获取 sql 对应的 Statement
       stmt = getStatement(sql);
-      //设置事务超时时间
+      //设置事务超时时间, 这里与 SimpleExecutor 不一样
       applyTransactionTimeout(stmt);
       //如果缓存中不存在对应的 Statement
     } else {
