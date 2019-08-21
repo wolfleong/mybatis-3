@@ -34,10 +34,17 @@ import org.apache.ibatis.session.RowBounds;
 import org.apache.ibatis.transaction.Transaction;
 
 /**
+ * 可重用的 Executor 实现类, 主要跟 SimpleExecutor 的区别在于 prepareStatement 方法
+ * reuse: 可重用的
+ * - 每次开始读或写操作，优先从缓存中获取对应的 Statement 对象。如果不存在，才进行创建
+ * - 执行完成后，不关闭该 Statement 对象
  * @author Clinton Begin
  */
 public class ReuseExecutor extends BaseExecutor {
 
+  /**
+   * Statement 的缓存, sql字符串作key, Statement对象做value
+   */
   private final Map<String, Statement> statementMap = new HashMap<>();
 
   public ReuseExecutor(Configuration configuration, Transaction transaction) {
@@ -46,14 +53,18 @@ public class ReuseExecutor extends BaseExecutor {
 
   @Override
   public int doUpdate(MappedStatement ms, Object parameter) throws SQLException {
+    //获取全局配置
     Configuration configuration = ms.getConfiguration();
+    //创建 StatementHandler
     StatementHandler handler = configuration.newStatementHandler(this, ms, parameter, RowBounds.DEFAULT, null, null);
+    //初始化 StatementHandler 对象, 并返回 Statement
     Statement stmt = prepareStatement(handler, ms.getStatementLog());
     return handler.update(stmt);
   }
 
   @Override
   public <E> List<E> doQuery(MappedStatement ms, Object parameter, RowBounds rowBounds, ResultHandler resultHandler, BoundSql boundSql) throws SQLException {
+    //操作与 SimpleExecutor 一样
     Configuration configuration = ms.getConfiguration();
     StatementHandler handler = configuration.newStatementHandler(wrapper, ms, parameter, rowBounds, resultHandler, boundSql);
     Statement stmt = prepareStatement(handler, ms.getStatementLog());
@@ -62,6 +73,7 @@ public class ReuseExecutor extends BaseExecutor {
 
   @Override
   protected <E> Cursor<E> doQueryCursor(MappedStatement ms, Object parameter, RowBounds rowBounds, BoundSql boundSql) throws SQLException {
+    //操作与 SimpleExecutor 一样
     Configuration configuration = ms.getConfiguration();
     StatementHandler handler = configuration.newStatementHandler(wrapper, ms, parameter, rowBounds, null, boundSql);
     Statement stmt = prepareStatement(handler, ms.getStatementLog());
@@ -70,29 +82,46 @@ public class ReuseExecutor extends BaseExecutor {
 
   @Override
   public List<BatchResult> doFlushStatements(boolean isRollback) {
+    //遍历缓存的所有 Statement
     for (Statement stmt : statementMap.values()) {
+      //关闭 Statement
       closeStatement(stmt);
     }
+    //清空缓存
     statementMap.clear();
+    //返回空列表
     return Collections.emptyList();
   }
 
   private Statement prepareStatement(StatementHandler handler, Log statementLog) throws SQLException {
     Statement stmt;
+    //获取 BoundSql
     BoundSql boundSql = handler.getBoundSql();
+    //获取sql
     String sql = boundSql.getSql();
+    //判断缓存中是否存在 sql 对应的 statement
     if (hasStatementFor(sql)) {
+      //如果存在, 则获取 sql 对应的 Statement
       stmt = getStatement(sql);
+      //设置事务超时时间
       applyTransactionTimeout(stmt);
+      //如果缓存中不存在对应的 Statement
     } else {
+      //获取 数据库连接
       Connection connection = getConnection(statementLog);
+      //创建 Statement 对象
       stmt = handler.prepare(connection, transaction.getTimeout());
+      //缓存 Statement
       putStatement(sql, stmt);
     }
+    //初始化参数
     handler.parameterize(stmt);
     return stmt;
   }
 
+  /**
+   * 判断是否存在 Statement 缓存
+   */
   private boolean hasStatementFor(String sql) {
     try {
       return statementMap.keySet().contains(sql) && !statementMap.get(sql).getConnection().isClosed();
@@ -101,10 +130,16 @@ public class ReuseExecutor extends BaseExecutor {
     }
   }
 
+  /**
+   * 根据 sql 获取 Statement
+   */
   private Statement getStatement(String s) {
     return statementMap.get(s);
   }
 
+  /**
+   * 缓存 Statement
+   */
   private void putStatement(String sql, Statement stmt) {
     statementMap.put(sql, stmt);
   }

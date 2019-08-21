@@ -100,6 +100,9 @@ public class SimpleExecutor extends BaseExecutor {
     return Collections.emptyList();
   }
 
+  /**
+   * 创建 Statement 对象, 并做一些初始化操作
+   */
   private Statement prepareStatement(StatementHandler handler, Log statementLog) throws SQLException {
     Statement stmt;
     //处理 Connection, 如果日志是debug级别, 则返回日志代理Connection
