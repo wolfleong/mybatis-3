@@ -349,10 +349,14 @@ public abstract class BaseExecutor implements Executor {
   public void rollback(boolean required) throws SQLException {
     if (!closed) {
       try {
+        //清空本地缓存
         clearLocalCache();
+        //刷新 批量执行的 Statement
         flushStatements(true);
       } finally {
+        //如果 required 为 true
         if (required) {
+          //进行事务回滚
           transaction.rollback();
         }
       }

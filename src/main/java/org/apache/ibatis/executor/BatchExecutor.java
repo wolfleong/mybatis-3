@@ -161,7 +161,7 @@ public class BatchExecutor extends BaseExecutor {
   public List<BatchResult> doFlushStatements(boolean isRollback) throws SQLException {
     try {
       List<BatchResult> results = new ArrayList<>();
-      //如果 isRollback 为 true, 则返回空数组
+      //如果 isRollback 为 true, 则表明是不需要执行 statementList 的语句, 直接返回空结果列表
       if (isRollback) {
         return Collections.emptyList();
       }
