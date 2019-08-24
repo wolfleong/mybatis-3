@@ -64,7 +64,9 @@ public abstract class BaseExecutor implements Executor {
    */
   protected Transaction transaction;
   /**
-   * 包装的 Executor 对象
+   * 包装的 Executor 对象,
+   * todo wolfleong 得了解一下, 为什么要设置这个 wrapper 来记录包装当前 Executor 的对象呢
+   * 我觉得主要是, 在 BaseExecutor 中有些方法是需要用到具体的包装类来调用的, 而不是当前的this
    */
   protected Executor wrapper;
   /**

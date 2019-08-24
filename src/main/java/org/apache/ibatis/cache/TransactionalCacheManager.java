@@ -21,36 +21,50 @@ import java.util.Map;
 import org.apache.ibatis.cache.decorators.TransactionalCache;
 
 /**
+ * TransactionalCache 管理器, 以 Cache 对象作为Key, TransactionalCache 作为 Value, TransactionalCache 是 Cache 的包装类
  * @author Clinton Begin
  */
 public class TransactionalCacheManager {
 
+  /**
+   * Cache 和 TransactionalCache 的映射
+   */
   private final Map<Cache, TransactionalCache> transactionalCaches = new HashMap<>();
 
   public void clear(Cache cache) {
+    //根据缓存对象获取事务缓存实例并清空缓存
     getTransactionalCache(cache).clear();
   }
 
   public Object getObject(Cache cache, CacheKey key) {
+    //获取事务缓存对象, 获取缓存
     return getTransactionalCache(cache).getObject(key);
   }
 
   public void putObject(Cache cache, CacheKey key, Object value) {
+    //获取事务缓存, 添加缓存
     getTransactionalCache(cache).putObject(key, value);
   }
 
   public void commit() {
+    //将事务管理器中的所有事务中的临时缓存刷到真正的缓存中
     for (TransactionalCache txCache : transactionalCaches.values()) {
+      //逐个提交
       txCache.commit();
     }
   }
 
   public void rollback() {
+    //将事务管理器操作的所有事务缓存进行回滚
     for (TransactionalCache txCache : transactionalCaches.values()) {
+      //逐个回滚
       txCache.rollback();
     }
   }
 
+  /**
+   * 将 Cache 包装成 TransactionalCache 并添加到事务缓存管理器中
+   */
   private TransactionalCache getTransactionalCache(Cache cache) {
     return transactionalCaches.computeIfAbsent(cache, TransactionalCache::new);
   }

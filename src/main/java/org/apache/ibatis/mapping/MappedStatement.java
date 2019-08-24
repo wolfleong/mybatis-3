@@ -82,7 +82,7 @@ public final class MappedStatement {
    */
   private boolean flushCacheRequired;
   /**
-   * 是否使用缓存
+   * 当前语句是否使用缓存
    */
   private boolean useCache;
   /**
