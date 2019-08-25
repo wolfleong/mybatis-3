@@ -31,6 +31,8 @@ import org.apache.ibatis.session.RowBounds;
 
 /**
  * 路由 StatementHandler , 在创建的时候, 根据 MappedStatement 的 StatementType 的类型来创建真正干活的StatementHandler
+ * - 经典的装饰器模式。实际上，有点多余。。。还不如改成工厂模式
+ * - 工厂模式不需要复盖方法
  * @author Clinton Begin
  */
 public class RoutingStatementHandler implements StatementHandler {

@@ -34,39 +34,74 @@ import org.apache.ibatis.session.RowBounds;
 import org.apache.ibatis.type.TypeHandlerRegistry;
 
 /**
+ * 实现 StatementHandler 接口，StatementHandler 基类，提供骨架方法，从而使子类只要实现指定的几个抽象方法即可。
  * @author Clinton Begin
  */
 public abstract class BaseStatementHandler implements StatementHandler {
 
+  /**
+   * 全局配置对象
+   */
   protected final Configuration configuration;
+  /**
+   * 对象创建工厂
+   */
   protected final ObjectFactory objectFactory;
+  /**
+   * TypeHandlerRegistry 注册器
+   */
   protected final TypeHandlerRegistry typeHandlerRegistry;
+  /**
+   * 结果处理器
+   */
   protected final ResultSetHandler resultSetHandler;
+  /**
+   * 参数处理器
+   */
   protected final ParameterHandler parameterHandler;
 
+  /**
+   * Executor
+   */
   protected final Executor executor;
+  /**
+   * MappedStatement
+   */
   protected final MappedStatement mappedStatement;
+  /**
+   * 分页参数
+   */
   protected final RowBounds rowBounds;
 
+  /**
+   * BoundSql
+   */
   protected BoundSql boundSql;
 
   protected BaseStatementHandler(Executor executor, MappedStatement mappedStatement, Object parameterObject, RowBounds rowBounds, ResultHandler resultHandler, BoundSql boundSql) {
+    //赋值
     this.configuration = mappedStatement.getConfiguration();
     this.executor = executor;
     this.mappedStatement = mappedStatement;
     this.rowBounds = rowBounds;
 
+    // 获得 TypeHandlerRegistry 和 ObjectFactory 对象
     this.typeHandlerRegistry = configuration.getTypeHandlerRegistry();
     this.objectFactory = configuration.getObjectFactory();
 
+    //如果 boundSql 为空，一般是写类操作，例如：insert、update、delete ，则先获得自增主键，然后再创建 BoundSql 对象
     if (boundSql == null) { // issue #435, get the key before calculating the statement
+      //获取自增主键
       generateKeys(parameterObject);
+      //获取 BoundSql
       boundSql = mappedStatement.getBoundSql(parameterObject);
     }
 
     this.boundSql = boundSql;
 
+    //创建 ParameterHandler
     this.parameterHandler = configuration.newParameterHandler(mappedStatement, parameterObject, boundSql);
+    //创建 ResultSetHandler
     this.resultSetHandler = configuration.newResultSetHandler(executor, mappedStatement, rowBounds, parameterHandler, resultHandler, boundSql);
   }
 
@@ -135,6 +170,9 @@ public abstract class BaseStatementHandler implements StatementHandler {
     }
   }
 
+  /**
+   * 获取自增主键
+   */
   protected void generateKeys(Object parameter) {
     KeyGenerator keyGenerator = mappedStatement.getKeyGenerator();
     ErrorContext.instance().store();
