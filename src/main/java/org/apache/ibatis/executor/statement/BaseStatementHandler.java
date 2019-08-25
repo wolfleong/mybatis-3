@@ -115,16 +115,26 @@ public abstract class BaseStatementHandler implements StatementHandler {
     return parameterHandler;
   }
 
+  /**
+   * 准备并且创建 Statement
+   * @param connection 连接对象
+   * @param transactionTimeout 事务超时时间
+   */
   @Override
   public Statement prepare(Connection connection, Integer transactionTimeout) throws SQLException {
+    //记录一下要执行的sql
     ErrorContext.instance().sql(boundSql.getSql());
     Statement statement = null;
     try {
+      //初始化 Statement
       statement = instantiateStatement(connection);
+      //设置超时时间
       setStatementTimeout(statement, transactionTimeout);
+      //设置 FetchSize
       setFetchSize(statement);
       return statement;
     } catch (SQLException e) {
+      //抛异常就关闭 Statement
       closeStatement(statement);
       throw e;
     } catch (Exception e) {
@@ -135,31 +145,44 @@ public abstract class BaseStatementHandler implements StatementHandler {
 
   protected abstract Statement instantiateStatement(Connection connection) throws SQLException;
 
+  /**
+   * 设置超时时间
+   */
   protected void setStatementTimeout(Statement stmt, Integer transactionTimeout) throws SQLException {
     Integer queryTimeout = null;
+    //如果 MappedStatement 有设置超时时间, 则用这个
     if (mappedStatement.getTimeout() != null) {
       queryTimeout = mappedStatement.getTimeout();
+      //如果 MappedStatement 没有设置超时时间, 则获取全局配置的超时间
     } else if (configuration.getDefaultStatementTimeout() != null) {
       queryTimeout = configuration.getDefaultStatementTimeout();
     }
+    //如果statement的超时时间最终有配置, 则设置
     if (queryTimeout != null) {
       stmt.setQueryTimeout(queryTimeout);
     }
+    //设置事务超时时间
+    //比较 queryTimeout 和 transactionTimeout 那个短取那个
     StatementUtil.applyTransactionTimeout(stmt, queryTimeout, transactionTimeout);
   }
 
   protected void setFetchSize(Statement stmt) throws SQLException {
+    //获取 fetchSize . 非空则设置
     Integer fetchSize = mappedStatement.getFetchSize();
     if (fetchSize != null) {
       stmt.setFetchSize(fetchSize);
       return;
     }
+    //如果没有配置 fetchSize , 取获取全局默认配置的 defaultFetchSize, 如果不为null, 则设置
     Integer defaultFetchSize = configuration.getDefaultFetchSize();
     if (defaultFetchSize != null) {
       stmt.setFetchSize(defaultFetchSize);
     }
   }
 
+  /**
+   * 关闭 Statement
+   */
   protected void closeStatement(Statement statement) {
     try {
       if (statement != null) {
@@ -176,6 +199,7 @@ public abstract class BaseStatementHandler implements StatementHandler {
   protected void generateKeys(Object parameter) {
     KeyGenerator keyGenerator = mappedStatement.getKeyGenerator();
     ErrorContext.instance().store();
+    //在 sql 执行之前执行
     keyGenerator.processBefore(executor, mappedStatement, null, parameter);
     ErrorContext.instance().recall();
   }

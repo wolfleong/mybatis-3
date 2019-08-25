@@ -591,15 +591,21 @@ public class Configuration {
   }
 
   public ParameterHandler newParameterHandler(MappedStatement mappedStatement, Object parameterObject, BoundSql boundSql) {
+    // 获取 LanguageDriver 来创建 ParameterHandler
     ParameterHandler parameterHandler = mappedStatement.getLang().createParameterHandler(mappedStatement, parameterObject, boundSql);
+    //应用插件
     parameterHandler = (ParameterHandler) interceptorChain.pluginAll(parameterHandler);
+    //返回
     return parameterHandler;
   }
 
   public ResultSetHandler newResultSetHandler(Executor executor, MappedStatement mappedStatement, RowBounds rowBounds, ParameterHandler parameterHandler,
       ResultHandler resultHandler, BoundSql boundSql) {
+    //创建 DefaultResultSetHandler
     ResultSetHandler resultSetHandler = new DefaultResultSetHandler(executor, mappedStatement, parameterHandler, resultHandler, boundSql, rowBounds);
+    //应用插件
     resultSetHandler = (ResultSetHandler) interceptorChain.pluginAll(resultSetHandler);
+    //返回
     return resultSetHandler;
   }
 
