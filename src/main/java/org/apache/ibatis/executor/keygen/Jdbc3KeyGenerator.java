@@ -64,20 +64,28 @@ public class Jdbc3KeyGenerator implements KeyGenerator {
 
   @Override
   public void processAfter(Executor executor, MappedStatement ms, Statement stmt, Object parameter) {
+    //批量处理
     processBatch(ms, stmt, parameter);
   }
 
   public void processBatch(MappedStatement ms, Statement stmt, Object parameter) {
+    //获取 keyProperties
     final String[] keyProperties = ms.getKeyProperties();
+    //如果没有设置 keyProperties 直接返回
     if (keyProperties == null || keyProperties.length == 0) {
       return;
     }
+    //获取生成key的 ResultSet
     try (ResultSet rs = stmt.getGeneratedKeys()) {
+      //获取元数据
       final ResultSetMetaData rsmd = rs.getMetaData();
+      //获取全局配置
       final Configuration configuration = ms.getConfiguration();
+      //如果生成的列数跟 keyProperties 对不上, 则不处理
       if (rsmd.getColumnCount() < keyProperties.length) {
         // Error?
       } else {
+        //处理 key
         assignKeys(configuration, rs, rsmd, keyProperties, parameter);
       }
     } catch (Exception e) {
@@ -88,14 +96,18 @@ public class Jdbc3KeyGenerator implements KeyGenerator {
   @SuppressWarnings("unchecked")
   private void assignKeys(Configuration configuration, ResultSet rs, ResultSetMetaData rsmd, String[] keyProperties,
       Object parameter) throws SQLException {
+    //如果参数是 ParamMap 或 StrictMap
     if (parameter instanceof ParamMap || parameter instanceof StrictMap) {
+      //多个参数或者用了 @Param 注解的
       // Multi-param or single param with @Param
       assignKeysToParamMap(configuration, rs, rsmd, keyProperties, (Map<String, ?>) parameter);
+      //如果参数是列表, 但列表不为空且参数第一个是 ParamMap 的情况
     } else if (parameter instanceof ArrayList && !((ArrayList<?>) parameter).isEmpty()
         && ((ArrayList<?>) parameter).get(0) instanceof ParamMap) {
       // Multi-param or single param with @Param in batch operation
       assignKeysToParamMapList(configuration, rs, rsmd, keyProperties, ((ArrayList<ParamMap<?>>) parameter));
     } else {
+      //处理理单个参数, 没有用 @Param 注解的
       // Single param without @Param
       assignKeysToParam(configuration, rs, rsmd, keyProperties, parameter);
     }
@@ -103,20 +115,30 @@ public class Jdbc3KeyGenerator implements KeyGenerator {
 
   private void assignKeysToParam(Configuration configuration, ResultSet rs, ResultSetMetaData rsmd,
       String[] keyProperties, Object parameter) throws SQLException {
+    //将参数变集合
     Collection<?> params = collectionize(parameter);
+    //如果集合为空, 则直接不处理
     if (params.isEmpty()) {
       return;
     }
+    //保存 KeyAssigner 的列表
     List<KeyAssigner> assignerList = new ArrayList<>();
+    //遍历 keyProperties
     for (int i = 0; i < keyProperties.length; i++) {
+      //创建 KeyAssigner 并添加到 assignerList
       assignerList.add(new KeyAssigner(configuration, rsmd, i + 1, null, keyProperties[i]));
     }
+    //遍历参数
     Iterator<?> iterator = params.iterator();
     while (rs.next()) {
+      //如果一个参数都没有
       if (!iterator.hasNext()) {
+        //报错
         throw new ExecutorException(String.format(MSG_TOO_MANY_KEYS, params.size()));
       }
+      //获取参数
       Object param = iterator.next();
+      //应用 key
       assignerList.forEach(x -> x.assign(rs, param));
     }
   }
@@ -210,12 +232,18 @@ public class Jdbc3KeyGenerator implements KeyGenerator {
     return paramMap.keySet().iterator().next();
   }
 
+  /**
+   * 参数变集合
+   */
   private static Collection<?> collectionize(Object param) {
+    //如果参数是集合, 则直接强转返回
     if (param instanceof Collection) {
       return (Collection<?>) param;
+      //如果参数是数组, 转换成集合返回
     } else if (param instanceof Object[]) {
       return Arrays.asList((Object[]) param);
     } else {
+      //转成集合返回
       return Arrays.asList(param);
     }
   }
