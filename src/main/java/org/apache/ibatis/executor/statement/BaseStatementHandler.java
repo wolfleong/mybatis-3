@@ -35,6 +35,31 @@ import org.apache.ibatis.type.TypeHandlerRegistry;
 
 /**
  * 实现 StatementHandler 接口，StatementHandler 基类，提供骨架方法，从而使子类只要实现指定的几个抽象方法即可。
+ *
+ * insensitive: 不敏感的
+ * sensitive: 敏感的
+ *
+ * 简单说明一下 ResultSet 几个静态变量的作用
+ * resultSetType(ResultSet的迭代类型) 的可选值有 ResultSet.TYPE_FORWARD_ONLY 、ResultSet.TYPE_SCROLL_INSENSITIVE 、ResultSet.TYPE_SCROLL_SENSITIVE:
+ * - TYPE_FORWARD_ONLY：默认的cursor 类型，仅仅支持结果集forward ，不支持backforward ，random ，last ，first 等操作
+ *
+ * - TYPE_SCROLL_INSENSITIVE：支持结果集backforward ，random ，last ，first 等操作，对其它session 对数据库中数据做出的更改是不敏感的。
+ *        实现方法：从数据库取出数据后，会把全部数据缓存到cache 中，对结果集的后续操作，是操作的cache 中的数据，数据库中记录发生变化后，不影响cache 中的数据，所以ResultSet 对结果集中的数据是INSENSITIVE 的。
+ *
+ * - TYPE_SCROLL_SENSITIVE：支持结果集backforward ，random ，last ，first 等操作，对其它session 对数据库中数据做出的更改是敏感的，即其他session 修改了数据库中的数据，会反应到本结果集中。
+ *        实现方法：从数据库取出数据后，不是把全部数据缓存到cache 中，而是把每条数据的rowid 缓存到cache 中，对结果集后续操作时，
+ *        是根据rowid 再去数据库中取数据。所以数据库中记录发生变化后，通过ResultSet 取出的记录是最新的，即ResultSet 是SENSITIVE 的。
+ *        但insert 和delete 操作不会影响到ResultSet ，因为insert 数据的rowid 不在ResultSet 取出的rowid 中，所以insert 的数据对ResultSet 是不可见的，
+ *        而delete 数据的rowid 依旧在ResultSet 中，所以ResultSet 仍可以取出被删除的记录（ 因为一般数据库的删除是标记删除，不是真正在数据库文件中删除 ）。
+ *
+ * ResultSetConcurrency(ResultSet的并发性), 的可选值有2个:
+ * - ResultSet.CONCUR_READ_ONLY 在ResultSet中的数据记录是只读的，不可以修改
+ * - ResultSet.CONCUR_UPDATABLE 在ResultSet中的数据记录可以任意修改，然后更新到数据库，可以插入，删除，修改。
+ *
+ * ResultSetHoldability(ResultSet的持久化):
+ * - HOLD_CURSORS_OVER_COMMIT: 在事务commit 或rollback 后，ResultSet 仍然可用。
+ * - CLOSE_CURSORS_AT_COMMIT: 在事务commit 或rollback 后，ResultSet 被关闭。
+ *
  * @author Clinton Begin
  */
 public abstract class BaseStatementHandler implements StatementHandler {

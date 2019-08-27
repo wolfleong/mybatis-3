@@ -33,6 +33,7 @@ import org.apache.ibatis.session.ResultHandler;
 import org.apache.ibatis.session.RowBounds;
 
 /**
+ * PreparedStatement的 StatementHandler 实现类
  * @author Clinton Begin
  */
 public class PreparedStatementHandler extends BaseStatementHandler {
@@ -74,17 +75,25 @@ public class PreparedStatementHandler extends BaseStatementHandler {
 
   @Override
   protected Statement instantiateStatement(Connection connection) throws SQLException {
+    //获取 sql
     String sql = boundSql.getSql();
+    //  处理 Jdbc3KeyGenerator 的情况
     if (mappedStatement.getKeyGenerator() instanceof Jdbc3KeyGenerator) {
+      //获取指定的 keyColumnNames
       String[] keyColumnNames = mappedStatement.getKeyColumns();
+      //如果指定的 keyColumnNames 为 null
       if (keyColumnNames == null) {
+        //指定自动生成主键要返回
         return connection.prepareStatement(sql, PreparedStatement.RETURN_GENERATED_KEYS);
       } else {
         return connection.prepareStatement(sql, keyColumnNames);
       }
+      //如果 ResultSetType 是 ResultSetType.DEFAULT
     } else if (mappedStatement.getResultSetType() == ResultSetType.DEFAULT) {
+      //直接创建 PrepareStatement, 默认游标只能向前移动, 并且不能改 ResultSet 的数据
       return connection.prepareStatement(sql);
     } else {
+      // 创建指定的 ResultSetType 的 ResultSet , 并且 ResultSet 只读
       return connection.prepareStatement(sql, mappedStatement.getResultSetType().getValue(), ResultSet.CONCUR_READ_ONLY);
     }
   }

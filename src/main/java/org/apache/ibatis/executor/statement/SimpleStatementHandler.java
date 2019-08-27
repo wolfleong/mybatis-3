@@ -109,10 +109,10 @@ public class SimpleStatementHandler extends BaseStatementHandler {
   protected Statement instantiateStatement(Connection connection) throws SQLException {
     //如果 resultSetType 是 ResultSetType.DEFAULT
     if (mappedStatement.getResultSetType() == ResultSetType.DEFAULT) {
-      //直接创建
+      //直接创建, 默认配置是 ResultSetType.TYPE_FORWARD_ONLY 只能向往前读,  CONCUR_READ_ONLY, resultSet的数据只读
       return connection.createStatement();
     } else {
-      //创建指定 ResultSetType 的
+      //创建配置指定 ResultSetType 的, 且并指定resultSet 的数据只读
       return connection.createStatement(mappedStatement.getResultSetType().getValue(), ResultSet.CONCUR_READ_ONLY);
     }
   }
