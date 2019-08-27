@@ -44,11 +44,17 @@ public class PreparedStatementHandler extends BaseStatementHandler {
 
   @Override
   public int update(Statement statement) throws SQLException {
+    //强转
     PreparedStatement ps = (PreparedStatement) statement;
+    //执行 sql
     ps.execute();
+    //返回处理的结果
     int rows = ps.getUpdateCount();
+    //获取参数对象
     Object parameterObject = boundSql.getParameterObject();
+    //获取 keyGenerator
     KeyGenerator keyGenerator = mappedStatement.getKeyGenerator();
+    //处理返回的主键
     keyGenerator.processAfter(executor, mappedStatement, ps, parameterObject);
     return rows;
   }
@@ -56,20 +62,27 @@ public class PreparedStatementHandler extends BaseStatementHandler {
   @Override
   public void batch(Statement statement) throws SQLException {
     PreparedStatement ps = (PreparedStatement) statement;
+    //添加到批处理
     ps.addBatch();
   }
 
   @Override
   public <E> List<E> query(Statement statement, ResultHandler resultHandler) throws SQLException {
+    //强转
     PreparedStatement ps = (PreparedStatement) statement;
+    //执行 sql
     ps.execute();
+    //处理结果
     return resultSetHandler.handleResultSets(ps);
   }
 
   @Override
   public <E> Cursor<E> queryCursor(Statement statement) throws SQLException {
+    //强转
     PreparedStatement ps = (PreparedStatement) statement;
+    //执行sql
     ps.execute();
+    //用 ResultSetHandler 处理结果
     return resultSetHandler.handleCursorResultSets(ps);
   }
 
@@ -86,6 +99,7 @@ public class PreparedStatementHandler extends BaseStatementHandler {
         //指定自动生成主键要返回
         return connection.prepareStatement(sql, PreparedStatement.RETURN_GENERATED_KEYS);
       } else {
+        //创建一个能返回由给定数组指定的自动生成键的默认 PreparedStatement 对象
         return connection.prepareStatement(sql, keyColumnNames);
       }
       //如果 ResultSetType 是 ResultSetType.DEFAULT
@@ -100,6 +114,7 @@ public class PreparedStatementHandler extends BaseStatementHandler {
 
   @Override
   public void parameterize(Statement statement) throws SQLException {
+    //调用 ParameterHandler 来设置参数
     parameterHandler.setParameters((PreparedStatement) statement);
   }
 
