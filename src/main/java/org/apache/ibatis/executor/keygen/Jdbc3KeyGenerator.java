@@ -42,12 +42,15 @@ import org.apache.ibatis.type.TypeHandler;
 import org.apache.ibatis.type.TypeHandlerRegistry;
 
 /**
+ * 主键生成器
+ * - 适用于 MySQL、H2 主键生成
  * @author Clinton Begin
  * @author Kazuki Shimizu
  */
 public class Jdbc3KeyGenerator implements KeyGenerator {
 
   /**
+   * 共享的单例
    * A shared instance.
    *
    * @since 3.4.3
@@ -59,6 +62,7 @@ public class Jdbc3KeyGenerator implements KeyGenerator {
 
   @Override
   public void processBefore(Executor executor, MappedStatement ms, Statement stmt, Object parameter) {
+    //空实现, 因为对于 Jdbc3KeyGenerator 类的主键, 是在 SQL 执行后, 才生成的
     // do nothing
   }
 
@@ -101,7 +105,7 @@ public class Jdbc3KeyGenerator implements KeyGenerator {
       //多个参数或者用了 @Param 注解的
       // Multi-param or single param with @Param
       assignKeysToParamMap(configuration, rs, rsmd, keyProperties, (Map<String, ?>) parameter);
-      //如果参数是列表, 但列表不为空且参数第一个是 ParamMap 的情况
+      //如果参数是列表, 但列表不为空且参数第一个是 ParamMap 的情况, 相当于判定 parameter 是 ArrayList<ParamMap<?>>
     } else if (parameter instanceof ArrayList && !((ArrayList<?>) parameter).isEmpty()
         && ((ArrayList<?>) parameter).get(0) instanceof ParamMap) {
       // Multi-param or single param with @Param in batch operation
@@ -167,11 +171,14 @@ public class Jdbc3KeyGenerator implements KeyGenerator {
 
   private void assignKeysToParamMap(Configuration configuration, ResultSet rs, ResultSetMetaData rsmd,
       String[] keyProperties, Map<String, ?> paramMap) throws SQLException {
+    //如果参数没值, 则返回
     if (paramMap.isEmpty()) {
       return;
     }
     Map<String, Entry<Iterator<?>, List<KeyAssigner>>> assignerMap = new HashMap<>();
+    //遍历 keyProperties
     for (int i = 0; i < keyProperties.length; i++) {
+      //从 ParamMap 中获取 KeyAssigner
       Entry<String, KeyAssigner> entry = getAssignerForParamMap(configuration, rsmd, i + 1, paramMap, keyProperties[i],
           keyProperties, true);
       Entry<Iterator<?>, List<KeyAssigner>> iteratorPair = assignerMap.computeIfAbsent(entry.getKey(),
@@ -191,25 +198,47 @@ public class Jdbc3KeyGenerator implements KeyGenerator {
     }
   }
 
+  /**
+   *
+   * @param config 全局配置
+   * @param rsmd jdbc元数据
+   * @param columnPosition 列的位置
+   * @param paramMap 参数Map
+   * @param keyProperty 字段名
+   * @param keyProperties 所有的keyProperties
+   * @param omitParamName 是否省略参数名
+   */
   private Entry<String, KeyAssigner> getAssignerForParamMap(Configuration config, ResultSetMetaData rsmd,
       int columnPosition, Map<String, ?> paramMap, String keyProperty, String[] keyProperties, boolean omitParamName) {
+    //是否参数只有一个
     boolean singleParam = paramMap.values().stream().distinct().count() == 1;
+    //第一个 .  的位置
     int firstDot = keyProperty.indexOf('.');
+    //如果找不到 .
     if (firstDot == -1) {
+      //如果只有一个参数,
       if (singleParam) {
+        //没有 . 且是单个参数, 则直接创建
         return getAssignerForSingleParam(config, rsmd, columnPosition, paramMap, keyProperty, omitParamName);
       }
+      //如果有多个参数, 但是不包含 . , 会抛出错误
       throw new ExecutorException("Could not determine which parameter to assign generated keys to. "
           + "Note that when there are multiple parameters, 'keyProperty' must include the parameter name (e.g. 'param.id'). "
           + "Specified key properties are " + ArrayUtil.toString(keyProperties) + " and available parameters are "
           + paramMap.keySet());
     }
+    //如果有多层, 则获取第一层参数名
     String paramName = keyProperty.substring(0, firstDot);
+    //如果参数Map包含这个key
     if (paramMap.containsKey(paramName)) {
+      //如果忽略参数名, 则返回null, 否则返回参数名
       String argParamName = omitParamName ? null : paramName;
+      //截取除 paramMapKey 后面的内容
       String argKeyProperty = keyProperty.substring(firstDot + 1);
+      //返回
       return entry(paramName, new KeyAssigner(config, rsmd, columnPosition, argParamName, argKeyProperty));
     } else if (singleParam) {
+      //有 . 的单个参数
       return getAssignerForSingleParam(config, rsmd, columnPosition, paramMap, keyProperty, omitParamName);
     } else {
       throw new ExecutorException("Could not find parameter '" + paramName + "'. "
@@ -219,11 +248,17 @@ public class Jdbc3KeyGenerator implements KeyGenerator {
     }
   }
 
+  /**
+   * 单个参数的ParamMap, 直接获取第一个参数的key值来创建
+   */
   private Entry<String, KeyAssigner> getAssignerForSingleParam(Configuration config, ResultSetMetaData rsmd,
       int columnPosition, Map<String, ?> paramMap, String keyProperty, boolean omitParamName) {
+    //单个参数, 直接获取第一个参数名
     // Assume 'keyProperty' to be a property of the single param.
     String singleParamName = nameOfSingleParam(paramMap);
+    //如果忽略参数名则返回 null, 否则返回参数名
     String argParamName = omitParamName ? null : singleParamName;
+    //返回参数 Entry<singleParamName, KeyAssigner>
     return entry(singleParamName, new KeyAssigner(config, rsmd, columnPosition, argParamName, keyProperty));
   }
 
@@ -254,12 +289,33 @@ public class Jdbc3KeyGenerator implements KeyGenerator {
   }
 
   private class KeyAssigner {
+    /**
+     * 全局配置
+     */
     private final Configuration configuration;
+    /**
+     * 元数据
+     */
     private final ResultSetMetaData rsmd;
+    /**
+     * 类型处理注册器
+     */
     private final TypeHandlerRegistry typeHandlerRegistry;
+    /**
+     * 列的位置
+     */
     private final int columnPosition;
+    /**
+     * 参数名
+     */
     private final String paramName;
+    /**
+     * 属性名
+     */
     private final String propertyName;
+    /**
+     * 类型处理器
+     */
     private TypeHandler<?> typeHandler;
 
     protected KeyAssigner(Configuration configuration, ResultSetMetaData rsmd, int columnPosition, String paramName,
@@ -274,15 +330,22 @@ public class Jdbc3KeyGenerator implements KeyGenerator {
     }
 
     protected void assign(ResultSet rs, Object param) {
+      //如果指定参数名不为null, 则 param 肯定是 ParamMap
       if (paramName != null) {
+        //从Map中获取参数对象出来
         // If paramName is set, param is ParamMap
         param = ((ParamMap<?>) param).get(paramName);
       }
+      //创建参数对象的 MetaObject
       MetaObject metaParam = configuration.newMetaObject(param);
       try {
+        //如果没有类型处理器
         if (typeHandler == null) {
+          //判断参数对象是否有这个属性
           if (metaParam.hasSetter(propertyName)) {
+            //获取参数类型
             Class<?> propertyType = metaParam.getSetterType(propertyName);
+            //查询参数处理器
             typeHandler = typeHandlerRegistry.getTypeHandler(propertyType,
                 JdbcType.forCode(rsmd.getColumnType(columnPosition)));
           } else {
@@ -290,10 +353,13 @@ public class Jdbc3KeyGenerator implements KeyGenerator {
                 + metaParam.getOriginalObject().getClass().getName() + "'.");
           }
         }
+        //如果参数处理器为null, 则不处理
         if (typeHandler == null) {
           // Error?
         } else {
+          //参数处理器不为null, 获取对应的 keyProperty 的值
           Object value = typeHandler.getResult(rs, columnPosition);
+          //设置值到参数
           metaParam.setValue(propertyName, value);
         }
       } catch (SQLException e) {
