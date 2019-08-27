@@ -114,6 +114,7 @@ public class CallableStatementHandler extends BaseStatementHandler {
   public void parameterize(Statement statement) throws SQLException {
     //设置查询参数
     registerOutputParameters((CallableStatement) statement);
+    //设置参数
     parameterHandler.setParameters((CallableStatement) statement);
   }
 
