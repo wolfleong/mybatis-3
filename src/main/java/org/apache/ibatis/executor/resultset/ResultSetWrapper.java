@@ -36,14 +36,30 @@ import org.apache.ibatis.type.TypeHandlerRegistry;
 import org.apache.ibatis.type.UnknownTypeHandler;
 
 /**
+ * ResultSet 的包装器, 可以理解成 ResultSet 的工具类
  * @author Iwao AVE!
  */
 public class ResultSetWrapper {
 
+  /**
+   * ResultSet 对象
+   */
   private final ResultSet resultSet;
+  /**
+   * 类型注册器
+   */
   private final TypeHandlerRegistry typeHandlerRegistry;
+  /**
+   * 字段名列表
+   */
   private final List<String> columnNames = new ArrayList<>();
+  /**
+   * 字段 JavaType 数组
+   */
   private final List<String> classNames = new ArrayList<>();
+  /**
+   * 字段 JdbcType 数组
+   */
   private final List<JdbcType> jdbcTypes = new ArrayList<>();
   private final Map<String, Map<Class<?>, TypeHandler<?>>> typeHandlerMap = new HashMap<>();
   private final Map<String, List<String>> mappedColumnNamesMap = new HashMap<>();
