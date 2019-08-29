@@ -193,6 +193,9 @@ public class Jdbc3KeyGenerator implements KeyGenerator {
     Map<String, Entry<Iterator<?>, List<KeyAssigner>>> assignerMap = new HashMap<>();
     //遍历 keyProperties, 每一个 keyProperty 一个 Entry<String, keyAssigner>
     for (int i = 0; i < keyProperties.length; i++) {
+      //看以前版本的源码, 如果不这样设置, 就导致无法处理这种key:  keyProperties=country.id,person.name,
+      //因为他写死 int firstDot = keyProperties[0].indexOf('.');
+      //String paramName = keyProperties[0].substring(0, firstDot);
       //从 ParamMap 中获取 KeyAssigner
       Entry<String, KeyAssigner> entry = getAssignerForParamMap(configuration, rsmd, i + 1, paramMap, keyProperties[i],
           keyProperties, true);
