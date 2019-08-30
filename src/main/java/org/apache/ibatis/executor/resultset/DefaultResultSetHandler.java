@@ -63,6 +63,7 @@ import org.apache.ibatis.type.TypeHandler;
 import org.apache.ibatis.type.TypeHandlerRegistry;
 
 /**
+ * ResultSetHandler 的默认实现类
  * @author Clinton Begin
  * @author Eduardo Macarron
  * @author Iwao AVE!
@@ -72,15 +73,45 @@ public class DefaultResultSetHandler implements ResultSetHandler {
 
   private static final Object DEFERRED = new Object();
 
+  /**
+   * 执行器
+   */
   private final Executor executor;
+  /**
+   * 全局配置
+   */
   private final Configuration configuration;
+  /**
+   * 执行的 MappedStatement
+   */
   private final MappedStatement mappedStatement;
+  /**
+   * 分页参数
+   */
   private final RowBounds rowBounds;
+  /**
+   * 参数处理器
+   */
   private final ParameterHandler parameterHandler;
+  /**
+   * 结果处理器, 用户指定的用于处理结果的处理器, 一般情况下不设置
+   */
   private final ResultHandler<?> resultHandler;
+  /**
+   * BoundSql
+   */
   private final BoundSql boundSql;
+  /**
+   * TypeHandler注册器
+   */
   private final TypeHandlerRegistry typeHandlerRegistry;
+  /**
+   * 对象工厂
+   */
   private final ObjectFactory objectFactory;
+  /**
+   * 反射Reflector工厂
+   */
   private final ReflectorFactory reflectorFactory;
 
   // nested resultmaps
@@ -92,9 +123,15 @@ public class DefaultResultSetHandler implements ResultSetHandler {
   private final Map<String, ResultMapping> nextResultMaps = new HashMap<>();
   private final Map<CacheKey, List<PendingRelation>> pendingRelations = new HashMap<>();
 
+  /**
+   * 自动映射的缓存, key 为 ResultMap#getId():columnPrefix
+   */
   // Cached Automappings
   private final Map<String, List<UnMappedColumnAutoMapping>> autoMappingsCache = new HashMap<>();
 
+  /**
+   * 是否使用构造方法创建该结果对象
+   */
   // temporary marking flag that indicate using constructor mapping (use field to reduce memory usage)
   private boolean useConstructorMappings;
 
@@ -119,6 +156,7 @@ public class DefaultResultSetHandler implements ResultSetHandler {
 
   public DefaultResultSetHandler(Executor executor, MappedStatement mappedStatement, ParameterHandler parameterHandler, ResultHandler<?> resultHandler, BoundSql boundSql,
                                  RowBounds rowBounds) {
+    //初始化相关对象
     this.executor = executor;
     this.configuration = mappedStatement.getConfiguration();
     this.mappedStatement = mappedStatement;
@@ -177,27 +215,66 @@ public class DefaultResultSetHandler implements ResultSetHandler {
   //
   // HANDLE RESULT SETS
   //
+
+  /**
+   * 处理多个 ResultSet
+   *
+   * - 第一种多结果集
+   *  <select id="getAllInfo" statementType="CALLABLE" resultMap="account,bankwater" > {call pro_getinfo()} </select>
+   *
+   * - 第二种多结果集
+   * <select id="selectBlog" resultSets="blogs,authors" resultMap="blogResult" statementType="CALLABLE">
+   *   {call getBlogsAndAuthors(#{id,jdbcType=INTEGER,mode=IN})}
+   * </select>
+   *
+   * <resultMap id="blogResult" type="Blog">
+   *    <id property="id" column="id" />
+   *    <result property="title" column="title"/>
+   *    <association property="author" javaType="Author" resultSet="authors" column="author_id" foreignColumn="id">
+   *      <id property="id" column="id"/>
+   *      <result property="username" column="username"/>
+   *      <result property="password" column="password"/>
+   *    </association>
+   *  </resultMap>
+   */
   @Override
   public List<Object> handleResultSets(Statement stmt) throws SQLException {
+    //记录日志参数, 如果把错则可以打印出来
     ErrorContext.instance().activity("handling results").object(mappedStatement.getId());
 
+    //多 ResultSet 的结果集合, 每个 ResultSet 对应一个 Object 对象, 而实际上每个 Object 是 List<Object> 对象
+    //多 ResultSet 只有存储过程才会出现, 一般只有一个
     final List<Object> multipleResults = new ArrayList<>();
 
+    // resultSet 的索引
     int resultSetCount = 0;
+    //获取第一个 ResultSet
     ResultSetWrapper rsw = getFirstResultSet(stmt);
 
+    //获取当前查询的 ResultMap 列表, 这个列表就是配置的 ResultMap , 多个结果对应多个 ResultMap
     List<ResultMap> resultMaps = mappedStatement.getResultMaps();
+    // ResultMap 的个数
     int resultMapCount = resultMaps.size();
+    //校验 ResultSet 和 ResultMap 的个数
     validateResultMapsCount(rsw, resultMapCount);
+    //while 里面的处理对应着上面的第一种多结果集
+    //如果 ResultSetWrapper 不为 null , 且 ResultMap 的个数大于 ResultSetCount
     while (rsw != null && resultMapCount > resultSetCount) {
+      //获取 ResultSet 对应的 ResultMap
       ResultMap resultMap = resultMaps.get(resultSetCount);
+      //处理 ResultSet ，将结果添加到 multipleResults 中
       handleResultSet(rsw, resultMap, multipleResults, null);
+      //获得下一个 ResultSet 对象，并封装成 ResultSetWrapper 对象
       rsw = getNextResultSet(stmt);
+      //清理
       cleanUpAfterHandlingResultSet();
+      //resultSet 索引加1
       resultSetCount++;
     }
 
+    //获取多结果集对应的名称
     String[] resultSets = mappedStatement.getResultSets();
+    //如果多结果集名称不为null
     if (resultSets != null) {
       while (rsw != null && resultSetCount < resultSets.length) {
         ResultMapping parentMapping = nextResultMaps.get(resultSets[resultSetCount]);
@@ -233,33 +310,56 @@ public class DefaultResultSetHandler implements ResultSetHandler {
     return new DefaultCursor<>(this, resultMap, rsw, rowBounds);
   }
 
+  /**
+   * 获取第一个 ResultSet , getResultSet 和 updateCount 都是获取执行结果, 而 getMoreResults 表示是否还有 ResultSet.
+   *
+   * 当 rs 为 null 时, 有两种情况
+   * - 如果当前的结果可能是真没结果了, 那么 getMoreResultSet 为 false, 而 getUpdateCount 为 -1
+   * - 当前结果是 updateCount , 则 getMoreResultSet 为 false, 而 updateCount > -1 , 所以通过 getUpdateCount 可以将当前结果取出
+   *
+   */
   private ResultSetWrapper getFirstResultSet(Statement stmt) throws SQLException {
+    //获取 ResultSet, 当前结果为 ResultSet对象或 null如果结果是更新计数或没有更多的结果
     ResultSet rs = stmt.getResultSet();
+    //如果没找到, 当找到了就直接退出
     while (rs == null) {
+      //判断是否有更多resultSet, 如果有则往下找, 直接找到第一个为
       // move forward to get the first resultset in case the driver
       // doesn't return the resultset as the first result (HSQLDB 2.1)
       if (stmt.getMoreResults()) {
         rs = stmt.getResultSet();
       } else {
+        //当 stmt.getMoreResults() == false && stmt.getUpdateCount() == -1 时, 就真的没有resultSet了
+        //没找到, 且当前执行语句不是更新, 则表明真的没有 ResultSet 了, 直接退出循环
         if (stmt.getUpdateCount() == -1) {
           // no more results. Must be no resultset
           break;
         }
       }
     }
+    //如果找到则将 resultSet 封成 ResultSetWrapper, 否则返回 null
     return rs != null ? new ResultSetWrapper(rs, configuration) : null;
   }
 
+  /**
+   * 获取下一个 ResultSet, 并封装成 ResultSetWrapper
+   * todo 这里不需要处理 updateCount 这种类型吗
+   */
   private ResultSetWrapper getNextResultSet(Statement stmt) {
     // Making this method tolerant of bad JDBC drivers
     try {
+      //如果数据库是支持多 ResultSet 的
       if (stmt.getConnection().getMetaData().supportsMultipleResultSets()) {
+        //确定是否还有多的结果集
         // Crazy Standard JDBC way of determining if there are more results
         if (!(!stmt.getMoreResults() && stmt.getUpdateCount() == -1)) {
+          //获取结果集
           ResultSet rs = stmt.getResultSet();
+          //如果为null, 则继续找
           if (rs == null) {
             return getNextResultSet(stmt);
           } else {
+            //不为null, 则直接返回包装的 ResultSetWrapper
             return new ResultSetWrapper(rs, configuration);
           }
         }
@@ -267,6 +367,7 @@ public class DefaultResultSetHandler implements ResultSetHandler {
     } catch (Exception e) {
       // Intentionally ignored.
     }
+    //没找到直接返回null
     return null;
   }
 
@@ -284,6 +385,9 @@ public class DefaultResultSetHandler implements ResultSetHandler {
     nestedResultObjects.clear();
   }
 
+  /**
+   * 校验 ResultSet 和 ResultMap , 如果有 ResultSet , 则 resultMap 的个数至少要有一个
+   */
   private void validateResultMapsCount(ResultSetWrapper rsw, int resultMapCount) {
     if (rsw != null && resultMapCount < 1) {
       throw new ExecutorException("A query was run and no Result Maps were found for the Mapped Statement '" + mappedStatement.getId()
@@ -291,11 +395,15 @@ public class DefaultResultSetHandler implements ResultSetHandler {
     }
   }
 
+  /**
+   * 处理单个 ResultSet
+   */
   private void handleResultSet(ResultSetWrapper rsw, ResultMap resultMap, List<Object> multipleResults, ResultMapping parentMapping) throws SQLException {
     try {
       if (parentMapping != null) {
         handleRowValues(rsw, resultMap, null, RowBounds.DEFAULT, parentMapping);
       } else {
+        //第一次进来, parentMapping 肯定为 null
         if (resultHandler == null) {
           DefaultResultHandler defaultResultHandler = new DefaultResultHandler(objectFactory);
           handleRowValues(rsw, resultMap, defaultResultHandler, rowBounds, null);

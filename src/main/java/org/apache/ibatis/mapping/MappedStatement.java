@@ -74,7 +74,7 @@ public final class MappedStatement {
    */
   private ParameterMap parameterMap;
   /**
-   * resultMap集合
+   * resultMap集合, 这个只是配置的 ResultMap, 或者是 type 转换的
    */
   private List<ResultMap> resultMaps;
   /**
