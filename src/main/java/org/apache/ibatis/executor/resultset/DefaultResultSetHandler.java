@@ -371,6 +371,9 @@ public class DefaultResultSetHandler implements ResultSetHandler {
     return null;
   }
 
+  /**
+   * 关闭 ResultSet
+   */
   private void closeResultSet(ResultSet rs) {
     try {
       if (rs != null) {
@@ -402,17 +405,23 @@ public class DefaultResultSetHandler implements ResultSetHandler {
     try {
       if (parentMapping != null) {
         handleRowValues(rsw, resultMap, null, RowBounds.DEFAULT, parentMapping);
-      } else {
         //第一次进来, parentMapping 肯定为 null
+      } else {
+        //如果没有自定义的 ResultHandler , 则创建默认的 DefaultResultHandler 对象
         if (resultHandler == null) {
+          //创建默认的 DefaultResultHandler
           DefaultResultHandler defaultResultHandler = new DefaultResultHandler(objectFactory);
+          //处理 ResultSet 返回的每一行 row
           handleRowValues(rsw, resultMap, defaultResultHandler, rowBounds, null);
+          //添加 DefaultResultHandler 的处理结果到 multipleResults 中
           multipleResults.add(defaultResultHandler.getResultList());
         } else {
+          //处理 ResultSet 返回的每一行 Row
           handleRowValues(rsw, resultMap, resultHandler, rowBounds, null);
         }
       }
     } finally {
+      //关闭 ResultSet 对象
       // issue #228 (close resultsets)
       closeResultSet(rsw.getResultSet());
     }
@@ -428,23 +437,36 @@ public class DefaultResultSetHandler implements ResultSetHandler {
   //
 
   public void handleRowValues(ResultSetWrapper rsw, ResultMap resultMap, ResultHandler<?> resultHandler, RowBounds rowBounds, ResultMapping parentMapping) throws SQLException {
+    //处理嵌套映射的情况
     if (resultMap.hasNestedResultMaps()) {
+      //嵌套结果集, 确定没有分页
       ensureNoRowBounds();
+      //嵌套结果集, 不使用自定义的 ResultHandler
       checkResultHandler();
+      // 处理嵌套映射的结果
       handleRowValuesForNestedResultMap(rsw, resultMap, resultHandler, rowBounds, parentMapping);
     } else {
+      // 处理简单的映射结果
       handleRowValuesForSimpleResultMap(rsw, resultMap, resultHandler, rowBounds, parentMapping);
     }
   }
 
+  /**
+   * 有嵌套结果集, 确认没有使用 RowBounds
+   */
   private void ensureNoRowBounds() {
+    // safeRowBoundsEnabled 为true, 如果rowBounds不为空且有效的话, 则报异常
     if (configuration.isSafeRowBoundsEnabled() && rowBounds != null && (rowBounds.getLimit() < RowBounds.NO_ROW_LIMIT || rowBounds.getOffset() > RowBounds.NO_ROW_OFFSET)) {
       throw new ExecutorException("Mapped Statements with nested result mappings cannot be safely constrained by RowBounds. "
           + "Use safeRowBoundsEnabled=false setting to bypass this check.");
     }
   }
 
+  /**
+   * 有嵌套结果集, 嵌套不使用自定义的 ResultHandler
+   */
   protected void checkResultHandler() {
+    //ResultHandler 不为null, 且 isSafeResultHandlerEnabled 为 true, 则不能使用自定义 ResultHandler, 但如果能确保结果是有序的(resultOrdered)则可以用
     if (resultHandler != null && configuration.isSafeResultHandlerEnabled() && !mappedStatement.isResultOrdered()) {
       throw new ExecutorException("Mapped Statements with nested result mappings cannot be safely used with a custom ResultHandler. "
           + "Use safeResultHandlerEnabled=false setting to bypass this check "
@@ -454,8 +476,11 @@ public class DefaultResultSetHandler implements ResultSetHandler {
 
   private void handleRowValuesForSimpleResultMap(ResultSetWrapper rsw, ResultMap resultMap, ResultHandler<?> resultHandler, RowBounds rowBounds, ResultMapping parentMapping)
       throws SQLException {
+    // 创建 DefaultResultContext 对象
     DefaultResultContext<Object> resultContext = new DefaultResultContext<>();
+    //获取 ResultSet
     ResultSet resultSet = rsw.getResultSet();
+    // 跳到 rowBounds 指定的开始位置
     skipRows(resultSet, rowBounds);
     while (shouldProcessMoreRows(resultContext, rowBounds) && !resultSet.isClosed() && resultSet.next()) {
       ResultMap discriminatedResultMap = resolveDiscriminatedResultMap(resultSet, resultMap, null);
@@ -482,13 +507,21 @@ public class DefaultResultSetHandler implements ResultSetHandler {
     return !context.isStopped() && context.getResultCount() < rowBounds.getLimit();
   }
 
+  /**
+   * 跳到指定的行
+   */
   private void skipRows(ResultSet rs, RowBounds rowBounds) throws SQLException {
+    //如果 ResultSet 类型不只向前移动的
     if (rs.getType() != ResultSet.TYPE_FORWARD_ONLY) {
+      //如果偏移量不为 0
       if (rowBounds.getOffset() != RowBounds.NO_ROW_OFFSET) {
+        //则直接定位到 offset
         rs.absolute(rowBounds.getOffset());
       }
     } else {
+      //如果 ResultSet 是 TYPE_FORWARD_ONLY, 则只能往下读取
       for (int i = 0; i < rowBounds.getOffset(); i++) {
+        //如果没有更多行了就直接退出
         if (!rs.next()) {
           break;
         }
