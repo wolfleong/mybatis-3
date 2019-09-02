@@ -381,6 +381,9 @@ public class MapperBuilderAssistant extends BaseBuilder {
     return value == null ? defaultValue : value;
   }
 
+  /**
+   * 这个方法会将参数类型变成 ParameterMap
+   */
   private ParameterMap getStatementParameterMap(
       String parameterMapName,
       Class<?> parameterTypeClass,

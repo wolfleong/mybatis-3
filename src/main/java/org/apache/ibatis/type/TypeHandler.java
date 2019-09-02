@@ -21,6 +21,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 
 /**
+ * TypeHandler 只处理某一列的数据类型
  * @author Clinton Begin
  */
 public interface TypeHandler<T> {
