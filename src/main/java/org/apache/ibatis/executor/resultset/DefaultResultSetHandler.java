@@ -828,7 +828,7 @@ public class DefaultResultSetHandler implements ResultSetHandler {
   //
 
   /**
-   * 创建映射后的结果对象
+   * 创建映射后的结果对象, 主要做的是, 根据结果对象是否是有延迟加载的嵌套子查询从而创建代理对象
    */
   private Object createResultObject(ResultSetWrapper rsw, ResultMap resultMap, ResultLoaderMap lazyLoader, String columnPrefix) throws SQLException {
     //设置是否使用构造器为false, 此处将重置
@@ -837,7 +837,7 @@ public class DefaultResultSetHandler implements ResultSetHandler {
     final List<Class<?>> constructorArgTypes = new ArrayList<>();
     //构造器参数
     final List<Object> constructorArgs = new ArrayList<>();
-    //创建结果对象
+    //创建结果对象, 结果可能为空
     Object resultObject = createResultObject(rsw, resultMap, constructorArgTypes, constructorArgs, columnPrefix);
     //如创建的结果对象不为null且非原始类型
     if (resultObject != null && !hasTypeHandlerForResultObject(rsw, resultMap.getType())) {
@@ -860,6 +860,14 @@ public class DefaultResultSetHandler implements ResultSetHandler {
     return resultObject;
   }
 
+  /**
+   * 根据各种条件创建结果对象, 主要四种情况, 返回结果有可能为null
+   * - 只有一列, 且有 TypeHandler 处理器, 直接从resultSet获取
+   * - 根据构造器映射创建对应的结果对象
+   * - 集合接口或Map,或有默认构造方法的, 直接创建结果实例
+   * - 根据 ResultSet 结果自动匹配构造器创建结果实例
+   *
+   */
   private Object createResultObject(ResultSetWrapper rsw, ResultMap resultMap, List<Class<?>> constructorArgTypes, List<Object> constructorArgs, String columnPrefix)
       throws SQLException {
     //获取结果类型
@@ -924,7 +932,7 @@ public class DefaultResultSetHandler implements ResultSetHandler {
       }
       //缓存参数类型
       constructorArgTypes.add(parameterType);
-      //缓存参数
+      //缓存参数, value 有可能为null
       constructorArgs.add(value);
       //只要有一列值, 则为 true
       foundValues = value != null || foundValues;
@@ -1091,27 +1099,47 @@ public class DefaultResultSetHandler implements ResultSetHandler {
     return value;
   }
 
+  /**
+   * 获取映射的嵌套查询值
+   */
   private Object getNestedQueryMappingValue(ResultSet rs, MetaObject metaResultObject, ResultMapping propertyMapping, ResultLoaderMap lazyLoader, String columnPrefix)
       throws SQLException {
+    //获取嵌套查询id
     final String nestedQueryId = propertyMapping.getNestedQueryId();
+    //获取属性值
     final String property = propertyMapping.getProperty();
+    //根据 selectId 获取 MappedStatement
     final MappedStatement nestedQuery = configuration.getMappedStatement(nestedQueryId);
+    //获取嵌套查询的参数类型, 即 property 的 JavaType
     final Class<?> nestedQueryParameterType = nestedQuery.getParameterMap().getType();
+    //创建嵌套查询的参数对象, 可能为null
     final Object nestedQueryParameterObject = prepareParameterForNestedQuery(rs, propertyMapping, nestedQueryParameterType, columnPrefix);
     Object value = null;
+    //如果参数对象不为null
     if (nestedQueryParameterObject != null) {
+      //获取 BoundSql
       final BoundSql nestedBoundSql = nestedQuery.getBoundSql(nestedQueryParameterObject);
+      //创建 CacheKey
       final CacheKey key = executor.createCacheKey(nestedQuery, nestedQueryParameterObject, RowBounds.DEFAULT, nestedBoundSql);
+      //字段的 JavaType
       final Class<?> targetType = propertyMapping.getJavaType();
+      //判断嵌套查询的结果是否有缓存
       if (executor.isCached(nestedQuery, key)) {
+        //创建 DeferredLoad 对象，并通过该 DeferredLoad 对象从缓存中加载结采对象
+        //todo wolfleong 后面要看回这里做了什么
         executor.deferLoad(nestedQuery, metaResultObject, property, key, targetType);
         value = DEFERRED;
       } else {
+        //如果没有缓存
         final ResultLoader resultLoader = new ResultLoader(configuration, executor, nestedQuery, nestedQueryParameterObject, targetType, key, nestedBoundSql);
+        //如果要求延迟加载
         if (propertyMapping.isLazy()) {
+          // 如果该属性配置了延迟加载，则将其添加到 `ResultLoader.loaderMap` 中，等待真正使用时再执行嵌套查询并得到结果对象。
           lazyLoader.addLoader(property, metaResultObject, resultLoader);
+          //返回已经定义
           value = DEFERRED;
         } else {
+          //没要求则立即加载
           value = resultLoader.loadResult();
         }
       }
