@@ -111,6 +111,9 @@ public class Configuration {
   protected boolean cacheEnabled = true;
   protected boolean callSettersOnNulls;
   protected boolean useActualParamName = true;
+  /**
+   * 一个值都没有, 是否还返回实例
+   */
   protected boolean returnInstanceForEmptyRow;
 
   protected String logPrefix;

@@ -549,7 +549,7 @@ public class DefaultResultSetHandler implements ResultSetHandler {
     final ResultLoaderMap lazyLoader = new ResultLoaderMap();
     //创建原始类型的结果对象和用构造器创建的结果对象都是已经查询过 ResultSet 的值了, 所以排序了原始类型外的,
     // 只要是用构造器创建的都是至少有一列有值的了, 这样来解析下面if的 foundValues
-    //创建映射后的结果对象
+    //创建映射后的结果对象, 如果有延迟查询, 则返回一个代理的行对象
     Object rowValue = createResultObject(rsw, resultMap, lazyLoader, columnPrefix);
     //如果结果类型有 TypeHandler 则表明, 可以直接处理, 不需要按字段映射
     //如果 hasTypeHandlerForResultObject(rsw, resultMap.getType()) 返回 true ，意味着 rowValue 是基本类型，无需执行下列逻辑。
@@ -597,51 +597,83 @@ public class DefaultResultSetHandler implements ResultSetHandler {
   // PROPERTY MAPPINGS
   //
 
+  /**
+   * 处理明确映射的列
+   */
   private boolean applyPropertyMappings(ResultSetWrapper rsw, ResultMap resultMap, MetaObject metaObject, ResultLoaderMap lazyLoader, String columnPrefix)
       throws SQLException {
+    //获取有匹配映射的列
     final List<String> mappedColumnNames = rsw.getMappedColumnNames(resultMap, columnPrefix);
     boolean foundValues = false;
+    //获取明确映射的列
     final List<ResultMapping> propertyMappings = resultMap.getPropertyResultMappings();
+    //遍历明确映射的列
     for (ResultMapping propertyMapping : propertyMappings) {
+      //拼接列的前缀
       String column = prependPrefix(propertyMapping.getColumn(), columnPrefix);
+      //如果列的嵌套结果集id不为空
       if (propertyMapping.getNestedResultMapId() != null) {
+        //将当前列设置为 null
         // the user added a column attribute to a nested result map, ignore it
         column = null;
       }
+      // 子查询的组合列
       if (propertyMapping.isCompositeResult()
+          // mappedColumnNames中的列
           || (column != null && mappedColumnNames.contains(column.toUpperCase(Locale.ENGLISH)))
+          //指定 ResultSet 的列(存储过程)
           || propertyMapping.getResultSet() != null) {
+        //获取指定字段的值
         Object value = getPropertyMappingValue(rsw.getResultSet(), metaObject, propertyMapping, lazyLoader, columnPrefix);
+        //获取字段名
         // issue #541 make property optional
         final String property = propertyMapping.getProperty();
+        //如果属性值为null, 则不处理当前映射
         if (property == null) {
+          //todo wolfleong 不知道什么情况下才不填 property
           continue;
+          //如果是多结果集的代表对象
         } else if (value == DEFERRED) {
+          //设置有值
           foundValues = true;
           continue;
         }
+        //如果最终值都不为null
         if (value != null) {
+          //设置有值
           foundValues = true;
         }
+        //值不为null, 或值为null但配置可以设置null且类型非原始类型
         if (value != null || (configuration.isCallSettersOnNulls() && !metaObject.getSetterType(property).isPrimitive())) {
+          //设置结果值
           // gcode issue #377, call setter on nulls (value is not 'found')
           metaObject.setValue(property, value);
         }
       }
     }
+    //返回是否有查询到值
     return foundValues;
   }
 
+  /**
+   * 获取指定字段的值
+   */
   private Object getPropertyMappingValue(ResultSet rs, MetaObject metaResultObject, ResultMapping propertyMapping, ResultLoaderMap lazyLoader, String columnPrefix)
       throws SQLException {
+    //如果嵌套子查询id 不为 null
     if (propertyMapping.getNestedQueryId() != null) {
+      //获取嵌套子查询的值
       return getNestedQueryMappingValue(rs, metaResultObject, propertyMapping, lazyLoader, columnPrefix);
+      //如果指定的 resultSet 不为空
     } else if (propertyMapping.getResultSet() != null) {
       addPendingChildRelation(rs, metaResultObject, propertyMapping);   // TODO is that OK?
       return DEFERRED;
     } else {
+      //普通的列, 则直接获取对应的 TypeHandler
       final TypeHandler<?> typeHandler = propertyMapping.getTypeHandler();
+      //列拼接字符串
       final String column = prependPrefix(propertyMapping.getColumn(), columnPrefix);
+      //获取对应的值
       return typeHandler.getResult(rs, column);
     }
   }
