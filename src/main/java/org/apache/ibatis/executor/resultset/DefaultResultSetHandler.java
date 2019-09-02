@@ -990,18 +990,25 @@ public class DefaultResultSetHandler implements ResultSetHandler {
     final String nestedQueryId = constructorMapping.getNestedQueryId();
     //获取对应的MappedStatement
     final MappedStatement nestedQuery = configuration.getMappedStatement(nestedQueryId);
-    //获得内嵌查询的参数类型
-    //todo wolfleong 这里会报空指针
+    //获得内嵌查询的参数类型, ParameterMap 是不可能为空的, 因为 MappedStatement.Builder中会建一个 defaultParameterMap 的默认值
     final Class<?> nestedQueryParameterType = nestedQuery.getParameterMap().getType();
+    //获取内嵌查询的参数对象
     final Object nestedQueryParameterObject = prepareParameterForNestedQuery(rs, constructorMapping, nestedQueryParameterType, columnPrefix);
     Object value = null;
+    //如果内嵌查询参数对象不为null
     if (nestedQueryParameterObject != null) {
+      //根据参数获取对应的子查询 BoundSql
       final BoundSql nestedBoundSql = nestedQuery.getBoundSql(nestedQueryParameterObject);
+      //创建一个缓存的 CacheKey
       final CacheKey key = executor.createCacheKey(nestedQuery, nestedQueryParameterObject, RowBounds.DEFAULT, nestedBoundSql);
+      //获取嵌套字段的类型, 即嵌套查询的返回类型
       final Class<?> targetType = constructorMapping.getJavaType();
+      //创建结果加载器, 延迟加载器
       final ResultLoader resultLoader = new ResultLoader(configuration, executor, nestedQuery, nestedQueryParameterObject, targetType, key, nestedBoundSql);
+      //立即加载结果
       value = resultLoader.loadResult();
     }
+    //返回查询结果
     return value;
   }
 
@@ -1033,47 +1040,89 @@ public class DefaultResultSetHandler implements ResultSetHandler {
     return value;
   }
 
+  /**
+   *
+   * @param rs ResultSet
+   * @param resultMapping 有子查询的 ResultMapping
+   * @param parameterType 子查询的参数类型, 即指定列 column 的类型
+   * @param columnPrefix 列前缀
+   * @return 返回参数值
+   */
   private Object prepareParameterForNestedQuery(ResultSet rs, ResultMapping resultMapping, Class<?> parameterType, String columnPrefix) throws SQLException {
+    //如果子查询的参数是复合主键
     if (resultMapping.isCompositeResult()) {
+      //column="{prop1=column1, prop2=column2}"
+      //处理复合的情况
       return prepareCompositeKeyParameter(rs, resultMapping, parameterType, columnPrefix);
     } else {
+      //column="id"
+      //处理简单的情况
       return prepareSimpleKeyParameter(rs, resultMapping, parameterType, columnPrefix);
     }
   }
 
+  /**
+   * 处理单个参数的子查询参数
+   * @param parameterType parameterType 即 column 的类型, 因为 column 的值就是给子查询作为参数用的
+   */
   private Object prepareSimpleKeyParameter(ResultSet rs, ResultMapping resultMapping, Class<?> parameterType, String columnPrefix) throws SQLException {
     final TypeHandler<?> typeHandler;
+    //如果 column 的列类型有对应的 TypeHandler
     if (typeHandlerRegistry.hasTypeHandler(parameterType)) {
+      //获取 TypeHandler
       typeHandler = typeHandlerRegistry.getTypeHandler(parameterType);
     } else {
+      //否则给一个默认的 TypeHandler
       typeHandler = typeHandlerRegistry.getUnknownTypeHandler();
     }
+    //通过 TypeHandler 获取指定列的值
     return typeHandler.getResult(rs, prependPrefix(resultMapping.getColumn(), columnPrefix));
   }
 
+  /**
+   * 处理复合参数的子查询参数
+   */
   private Object prepareCompositeKeyParameter(ResultSet rs, ResultMapping resultMapping, Class<?> parameterType, String columnPrefix) throws SQLException {
+    //创建参数参数对象
     final Object parameterObject = instantiateParameterObject(parameterType);
+    //创建参数对象的 MetaObject
     final MetaObject metaObject = configuration.newMetaObject(parameterObject);
+    //默认没找到值
     boolean foundValues = false;
+    //遍历复合映射列表
     for (ResultMapping innerResultMapping : resultMapping.getComposites()) {
+      //获取字段在参数对象中的类型
       final Class<?> propType = metaObject.getSetterType(innerResultMapping.getProperty());
+      //获取字段类型对应的 TypeHandler
       final TypeHandler<?> typeHandler = typeHandlerRegistry.getTypeHandler(propType);
+      //使用 TypeHandler 和 字段名获取对应的值
       final Object propValue = typeHandler.getResult(rs, prependPrefix(innerResultMapping.getColumn(), columnPrefix));
+      //如果获取地值不为null
       // issue #353 & #560 do not execute nested query if key is null
       if (propValue != null) {
+        //设置到参数中
         metaObject.setValue(innerResultMapping.getProperty(), propValue);
+        //标记已经找到值
         foundValues = true;
       }
     }
+    //如果复合参数有值, 则返回参数对象, 否则返回 null
     return foundValues ? parameterObject : null;
   }
 
+  /**
+   * 初始化参数实例
+   */
   private Object instantiateParameterObject(Class<?> parameterType) {
+    //如果参数类型是null
     if (parameterType == null) {
+      //默认给 HashMap
       return new HashMap<>();
+      //如果参数是 ParamMap, 则还是默认给 HashMap
     } else if (ParamMap.class.equals(parameterType)) {
       return new HashMap<>(); // issue #649
     } else {
+      //其他对象, 直接用默认构造器创建
       return objectFactory.create(parameterType);
     }
   }
