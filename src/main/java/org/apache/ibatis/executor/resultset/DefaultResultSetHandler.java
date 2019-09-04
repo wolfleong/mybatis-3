@@ -497,13 +497,17 @@ public class DefaultResultSetHandler implements ResultSetHandler {
     if (parentMapping != null) {
       linkToParents(rs, parentMapping, rowValue);
     } else {
+      //调用 ResultHandler 进行处理
       callResultHandler(resultHandler, resultContext, rowValue);
     }
   }
 
   @SuppressWarnings("unchecked" /* because ResultHandler<?> is always ResultHandler<Object>*/)
   private void callResultHandler(ResultHandler<?> resultHandler, DefaultResultContext<Object> resultContext, Object rowValue) {
+    //设置结果对象到 ResultContext 中
     resultContext.nextResultObject(rowValue);
+    //使用 ResultHandler 处理结果。
+    //如果使用 DefaultResultHandler 实现类的情况，会将映射创建的结果对象添加到 ResultHandler.resultList 中保存
     ((ResultHandler<Object>) resultHandler).handleResult(resultContext);
   }
 
