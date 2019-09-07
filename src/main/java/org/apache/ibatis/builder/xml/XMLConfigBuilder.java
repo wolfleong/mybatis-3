@@ -365,7 +365,7 @@ public class XMLConfigBuilder extends BaseBuilder {
   }
 
   /**
-   * 配置环境
+   * 配置环境, 这个肯定是要配置的
    */
   private void environmentsElement(XNode context) throws Exception {
     if (context != null) {
