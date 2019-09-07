@@ -84,7 +84,7 @@ public class ResultMapping {
    */
   private String resultSet;
   /**
-   * 指定外键列, 可能多个
+   * 指定外键列, 可能多个, 这个列主要是对应嵌套子 ResultMap 中的某一列
    */
   private String foreignColumn;
   /**
