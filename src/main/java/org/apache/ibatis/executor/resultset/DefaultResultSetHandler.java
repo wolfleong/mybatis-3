@@ -325,19 +325,27 @@ public class DefaultResultSetHandler implements ResultSetHandler {
 
   @Override
   public <E> Cursor<E> handleCursorResultSets(Statement stmt) throws SQLException {
+    //记录操作参数
     ErrorContext.instance().activity("handling cursor results").object(mappedStatement.getId());
 
+    //获取第一个 ResultSet 并封装成 ResultSetWrapper
     ResultSetWrapper rsw = getFirstResultSet(stmt);
 
+    //获取 mappedStatement 指定的 ResultMap 列表
     List<ResultMap> resultMaps = mappedStatement.getResultMaps();
 
+    //获取 ResultMap 的个数
     int resultMapCount = resultMaps.size();
+    //校验结果集和 ResultMap 的数是否正确
     validateResultMapsCount(rsw, resultMapCount);
+    //如果返回 Cursor , 则 ResultMap 只能指定一个
     if (resultMapCount != 1) {
       throw new ExecutorException("Cursor results cannot be mapped to multiple resultMaps");
     }
 
+    //获取指定的 ResultMap
     ResultMap resultMap = resultMaps.get(0);
+    //创建 DefaultCursor 返回
     return new DefaultCursor<>(this, resultMap, rsw, rowBounds);
   }
 
@@ -485,7 +493,8 @@ public class DefaultResultSetHandler implements ResultSetHandler {
   }
 
   /**
-   * 有嵌套结果集, 确认没有使用 RowBounds
+   * 有嵌套结果集, 确认没有使用 RowBounds.
+   * - 嵌套子结果集是有可能对上下行的对象有依赖, 如果使用了分页, 可能会忽略掉某些数据, 做不了聚合操作, 导致返回的数据不正确.如: collection
    */
   private void ensureNoRowBounds() {
     // safeRowBoundsEnabled 为true, 如果rowBounds不为空且有效的话, 则报异常
@@ -496,7 +505,10 @@ public class DefaultResultSetHandler implements ResultSetHandler {
   }
 
   /**
-   * 有嵌套结果集, 嵌套不使用自定义的 ResultHandler
+   * 有嵌套结果集, 嵌套不使用自定义的 ResultHandler.
+   * - 因为嵌套结果集在聚合同一个主对象的嵌套结果时, 会先将主对象放进 ResultHandler,
+   *   这个对象是暂停未完整的, 需要等整个映射完成后, 主对象才完整, 如: collection
+   * - 如果是 resultOrdered 就可以使用自定义的 ResultHandler
    */
   protected void checkResultHandler() {
     //ResultHandler 不为null, 且 isSafeResultHandlerEnabled 为 true, 则不能使用自定义 ResultHandler, 但如果能确保结果是有序的(resultOrdered)则可以用
