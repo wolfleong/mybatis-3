@@ -42,6 +42,7 @@ import org.apache.ibatis.session.ResultHandler;
 import org.apache.ibatis.session.RowBounds;
 
 /**
+ * 主要存每个结果对象中的延迟加载属性
  * @author Clinton Begin
  * @author Franta Mejta
  */

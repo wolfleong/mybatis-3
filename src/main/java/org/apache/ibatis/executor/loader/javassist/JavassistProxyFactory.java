@@ -162,9 +162,9 @@ public class JavassistProxyFactory implements org.apache.ibatis.executor.loader.
     public static Object createProxy(Object target, ResultLoaderMap lazyLoader, Configuration configuration, ObjectFactory objectFactory, List<Class<?>> constructorArgTypes, List<Object> constructorArgs) {
       //获取结果对象的类型
       final Class<?> type = target.getClass();
-      //创建代理对象方法处理器的实例
+      //创建代理对象方法处理器的回调
       EnhancedResultObjectProxyImpl callback = new EnhancedResultObjectProxyImpl(type, lazyLoader, configuration, objectFactory, constructorArgTypes, constructorArgs);
-      //创建代理对象
+      //创建空的代理对象
       Object enhanced = crateProxy(type, callback, constructorArgTypes, constructorArgs);
       //将原来的结果对象的属性复制到代理对象中
       PropertyCopier.copyBeanProperties(type, target, enhanced);
