@@ -23,6 +23,7 @@ import org.apache.ibatis.executor.loader.ResultLoaderMap;
 import org.apache.ibatis.reflection.factory.ObjectFactory;
 
 /**
+ * Javassist 方式的代理对象
  * @author Eduardo Macarron
  */
 class JavassistSerialStateHolder extends AbstractSerialStateHolder {
@@ -44,6 +45,7 @@ class JavassistSerialStateHolder extends AbstractSerialStateHolder {
   @Override
   protected Object createDeserializationProxy(Object target, Map<String, ResultLoaderMap.LoadPair> unloadedProperties, ObjectFactory objectFactory,
           List<Class<?>> constructorArgTypes, List<Object> constructorArgs) {
+    //创建反序列化代理对象
     return new JavassistProxyFactory().createDeserializationProxy(target, unloadedProperties, objectFactory, constructorArgTypes, constructorArgs);
   }
 }

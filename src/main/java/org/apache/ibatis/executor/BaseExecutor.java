@@ -493,12 +493,33 @@ public abstract class BaseExecutor implements Executor {
 
   private static class DeferredLoad {
 
+    /**
+     * 结果对象的 MetaObject
+     */
     private final MetaObject resultObject;
+    /**
+     * 结果对象所在的属性
+     */
     private final String property;
+    /**
+     * 结果对象的类型
+     */
     private final Class<?> targetType;
+    /**
+     * CacheKey
+     */
     private final CacheKey key;
+    /**
+     * 本地缓存
+     */
     private final PerpetualCache localCache;
+    /**
+     * 对象工厂
+     */
     private final ObjectFactory objectFactory;
+    /**
+     * 结果提取器
+     */
     private final ResultExtractor resultExtractor;
 
     // issue #781
@@ -512,20 +533,32 @@ public abstract class BaseExecutor implements Executor {
       this.property = property;
       this.key = key;
       this.localCache = localCache;
+      //获取对象工厂
       this.objectFactory = configuration.getObjectFactory();
+      //创建结果提取器
       this.resultExtractor = new ResultExtractor(configuration, objectFactory);
       this.targetType = targetType;
     }
 
+    /**
+     * 是否可以加载
+     */
     public boolean canLoad() {
+      //如果缓存中有 CacheKey 对应的对象, 且 对象不是 EXECUTION_PLACEHOLDER , 则可以加载
       return localCache.getObject(key) != null && localCache.getObject(key) != EXECUTION_PLACEHOLDER;
     }
 
+    /**
+     * 加载延迟对象
+     */
     public void load() {
+      //获取缓存对象
       @SuppressWarnings("unchecked")
       // we suppose we get back a List
       List<Object> list = (List<Object>) localCache.getObject(key);
+      //提取真正的返回值
       Object value = resultExtractor.extractObjectFromList(list, targetType);
+      //设置返回值到结果对象的指定属性中
       resultObject.setValue(property, value);
     }
 

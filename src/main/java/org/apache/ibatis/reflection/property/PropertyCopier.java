@@ -29,6 +29,9 @@ public final class PropertyCopier {
     // Prevent Instantiation of Static Class
   }
 
+  /**
+   * 这复制主要是通过 Field.set 来设置值, 并非通过 getter 和 setter 处理
+   */
   public static void copyBeanProperties(Class<?> type, Object sourceBean, Object destinationBean) {
     Class<?> parent = type;
     while (parent != null) {

@@ -22,6 +22,11 @@ import java.io.ObjectStreamException;
  */
 public interface WriteReplaceInterface {
 
+  /**
+   * - Serializable还有两个标记接口方法可以实现序列化对象的替换，即writeReplace和readResolve
+   * - 如果实现了writeReplace方法后，那么在序列化时会先调用writeReplace方法将当前对象替换成另一个对象（该方法会返回替换后的对象）并将其写入流中
+   * 实现writeReplace就不要实现writeObject了，因为writeReplace的返回值会被自动写入输出流中，就相当于自动这样调用：writeObject(writeReplace());
+   */
   Object writeReplace() throws ObjectStreamException;
 
 }
