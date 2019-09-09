@@ -54,7 +54,8 @@ public class Plugin implements InvocationHandler {
 
   /**
    * 创建代理对象, 如果找不到拦截器上面的定义的接口, 则直接返回原对象, 处理多个 Interceptor 也不影响
-   * - 但是, 如果 target 实现多个接口, 每个 Interceptor 处理不同的接口, 返回的代理对象就有问题了, 现在的拦截的对象不会出现这种情况
+   * - 但是, 如果 target 实现多个接口, 每个 Interceptor 处理不同的接口, 返回的代理对象只实现原始对象的其中的一些接口, 就有问题了,
+   *   因为所有拦截对象都只有一个接口, 所以现在的拦截的对象不会出现这种情况
    */
   public static Object wrap(Object target, Interceptor interceptor) {
     //获取拦截的方法的映射
