@@ -78,10 +78,12 @@ public class ManagedTransaction implements Transaction {
 
   @Override
   public void close() throws SQLException {
+    //如果可以关闭连接, 且连接不为 null
     if (this.closeConnection && this.connection != null) {
       if (log.isDebugEnabled()) {
         log.debug("Closing JDBC Connection [" + this.connection + "]");
       }
+      //关闭连接
       this.connection.close();
     }
   }
