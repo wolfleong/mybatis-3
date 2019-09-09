@@ -103,6 +103,9 @@ public class Configuration {
 
   protected boolean safeRowBoundsEnabled;
   protected boolean safeResultHandlerEnabled = true;
+  /**
+   * 下划线变驼峰
+   */
   protected boolean mapUnderscoreToCamelCase;
   /**
    * 当开启(true)时，任何方法的调用都会加载该对象的所有属性。 否则(false)，每个属性会按需加载
