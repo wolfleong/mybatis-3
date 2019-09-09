@@ -150,7 +150,8 @@ public class TransactionalCache implements Cache {
     }
     // 将 entriesMissedInCache 刷入 delegate 中
     for (Object entry : entriesMissedInCache) {
-      //如果当前事务中的缓存也不存在
+      //如果当前事务中的缓存也不存在,
+      // 我觉得可能要这样理解, 也就是当前事务查询出来的是 null, 那么 null 也算是查询结果, 则要将null, 设置刷进缓存
       //todo wolfleong 为什么要置空
       if (!entriesToAddOnCommit.containsKey(entry)) {
         delegate.putObject(entry, null);
