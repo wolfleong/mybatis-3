@@ -52,6 +52,9 @@ public class Plugin implements InvocationHandler {
     this.signatureMap = signatureMap;
   }
 
+  /**
+   * 创建代理对象, 如果找不到拦截器上面的
+   */
   public static Object wrap(Object target, Interceptor interceptor) {
     //获取拦截的方法的映射
     Map<Class<?>, Set<Method>> signatureMap = getSignatureMap(interceptor);

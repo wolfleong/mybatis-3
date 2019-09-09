@@ -36,6 +36,7 @@ public class InterceptorChain {
   public Object pluginAll(Object target) {
     //遍历所有拦截器, 应用插件
     for (Interceptor interceptor : interceptors) {
+      //创建代理对象返回
       target = interceptor.plugin(target);
     }
     return target;
