@@ -23,6 +23,7 @@ import javax.sql.DataSource;
 import org.apache.ibatis.session.TransactionIsolationLevel;
 
 /**
+ * 事务工厂
  * Creates {@link Transaction} instances.
  *
  * @author Clinton Begin
@@ -38,6 +39,7 @@ public interface TransactionFactory {
   }
 
   /**
+   * 根据连接创建事务
    * Creates a {@link Transaction} out of an existing connection.
    * @param conn Existing database connection
    * @return Transaction
@@ -46,6 +48,7 @@ public interface TransactionFactory {
   Transaction newTransaction(Connection conn);
 
   /**
+   * 根据 dataSource 创建事务
    * Creates a {@link Transaction} out of a datasource.
    * @param dataSource DataSource to take the connection from
    * @param level Desired isolation level

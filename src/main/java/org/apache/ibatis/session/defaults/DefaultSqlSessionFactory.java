@@ -32,6 +32,7 @@ import org.apache.ibatis.transaction.TransactionFactory;
 import org.apache.ibatis.transaction.managed.ManagedTransactionFactory;
 
 /**
+ * 实现 SqlSessionFactory 接口, 默认的 SqlSessionFactory 实现类
  * @author Clinton Begin
  */
 public class DefaultSqlSessionFactory implements SqlSessionFactory {
@@ -90,15 +91,22 @@ public class DefaultSqlSessionFactory implements SqlSessionFactory {
   private SqlSession openSessionFromDataSource(ExecutorType execType, TransactionIsolationLevel level, boolean autoCommit) {
     Transaction tx = null;
     try {
+      //获取 Environment
       final Environment environment = configuration.getEnvironment();
+      //获取 TransactionFactory
       final TransactionFactory transactionFactory = getTransactionFactoryFromEnvironment(environment);
+      //创建 Transaction
       tx = transactionFactory.newTransaction(environment.getDataSource(), level, autoCommit);
+      //创建 Executor
       final Executor executor = configuration.newExecutor(tx, execType);
+      //创建 DefaultSqlSession
       return new DefaultSqlSession(configuration, executor, autoCommit);
     } catch (Exception e) {
+      //如果发生异常, 关闭事务
       closeTransaction(tx); // may have fetched a connection so lets call close()
       throw ExceptionFactory.wrapException("Error opening session.  Cause: " + e, e);
     } finally {
+      //重置异常内容
       ErrorContext.instance().reset();
     }
   }
@@ -126,12 +134,17 @@ public class DefaultSqlSessionFactory implements SqlSessionFactory {
   }
 
   private TransactionFactory getTransactionFactoryFromEnvironment(Environment environment) {
+    //如果 Environment 是 null, 则创建一个 ManagedTransactionFactory
     if (environment == null || environment.getTransactionFactory() == null) {
       return new ManagedTransactionFactory();
     }
+    //从 Environment 中获取事务工厂
     return environment.getTransactionFactory();
   }
 
+  /**
+   * 关闭事务
+   */
   private void closeTransaction(Transaction tx) {
     if (tx != null) {
       try {

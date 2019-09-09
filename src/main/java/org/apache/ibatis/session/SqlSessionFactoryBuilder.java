@@ -26,7 +26,7 @@ import org.apache.ibatis.executor.ErrorContext;
 import org.apache.ibatis.session.defaults.DefaultSqlSessionFactory;
 
 /**
- * SqlSessionFactory构造器
+ * SqlSessionFactory 构造器
  * Builds {@link SqlSession} instances.
  *
  * @author Clinton Begin
@@ -45,6 +45,9 @@ public class SqlSessionFactoryBuilder {
     return build(reader, null, properties);
   }
 
+  /**
+   * 构造 SqlSessionFactory 对象
+   */
   public SqlSessionFactory build(Reader reader, String environment, Properties properties) {
     try {
       //创建 XMLConfigBuilder 对象
