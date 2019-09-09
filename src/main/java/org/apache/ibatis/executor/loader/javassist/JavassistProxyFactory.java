@@ -203,7 +203,7 @@ public class JavassistProxyFactory implements org.apache.ibatis.executor.loader.
             }
             //调用的是普通方法
           } else {
-            //有懒加载且非 FINALIZE_METHOD 方法
+            //有懒加载且不是 FINALIZE_METHOD 方法
             if (lazyLoader.size() > 0 && !FINALIZE_METHOD.equals(methodName)) {
               //如果设置全部触发 且是触发懒加载的方法
               if (aggressive || lazyLoadTriggerMethods.contains(methodName)) {

@@ -28,6 +28,7 @@ import org.apache.ibatis.reflection.property.PropertyNamer;
 
 /**
  * 反序列化增强的抽象类
+ * todo wolfleong 什么场景才会反序列化
  * @author Clinton Begin
  */
 public abstract class AbstractEnhancedDeserializationProxy {
@@ -104,6 +105,7 @@ public abstract class AbstractEnhancedDeserializationProxy {
         //同步处理
         synchronized (this.reloadingPropertyLock) {
           //如果调用的是非 FINALIZE_METHOD 方法, 且是调用操作属性的方法, 并且不
+          //todo wolfleong 这里为什么不用判断是否用了 getter, 难道调用了setter 也做懒加载处理吗
           if (!FINALIZE_METHOD.equals(methodName) && PropertyNamer.isProperty(methodName) && !reloadingProperty) {
             //获取属性名
             final String property = PropertyNamer.methodToProperty(methodName);
