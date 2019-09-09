@@ -33,6 +33,7 @@ import org.apache.ibatis.transaction.managed.ManagedTransactionFactory;
 
 /**
  * 实现 SqlSessionFactory 接口, 默认的 SqlSessionFactory 实现类
+ * - 如果不传入 autoCommit 参数, 都是非自动提交
  * @author Clinton Begin
  */
 public class DefaultSqlSessionFactory implements SqlSessionFactory {
@@ -45,6 +46,7 @@ public class DefaultSqlSessionFactory implements SqlSessionFactory {
 
   @Override
   public SqlSession openSession() {
+    //创建时, 非自动提交
     return openSessionFromDataSource(configuration.getDefaultExecutorType(), null, false);
   }
 
@@ -106,7 +108,7 @@ public class DefaultSqlSessionFactory implements SqlSessionFactory {
       closeTransaction(tx); // may have fetched a connection so lets call close()
       throw ExceptionFactory.wrapException("Error opening session.  Cause: " + e, e);
     } finally {
-      //重置异常内容
+      //重置异常记录
       ErrorContext.instance().reset();
     }
   }
@@ -115,20 +117,28 @@ public class DefaultSqlSessionFactory implements SqlSessionFactory {
     try {
       boolean autoCommit;
       try {
+        //获取自动提交
         autoCommit = connection.getAutoCommit();
       } catch (SQLException e) {
         // Failover to true, as most poor drivers
         // or databases won't support transactions
+        //如果异常, 则设置自动提交
         autoCommit = true;
       }
+      //获取 Environment
       final Environment environment = configuration.getEnvironment();
+      //获取 TransactionFactory
       final TransactionFactory transactionFactory = getTransactionFactoryFromEnvironment(environment);
+      //用事务工厂创建 Transaction
       final Transaction tx = transactionFactory.newTransaction(connection);
+      //创建 Executor
       final Executor executor = configuration.newExecutor(tx, execType);
+      //创建 DefaultSqlSession
       return new DefaultSqlSession(configuration, executor, autoCommit);
     } catch (Exception e) {
       throw ExceptionFactory.wrapException("Error opening session.  Cause: " + e, e);
     } finally {
+      //重置异常记录
       ErrorContext.instance().reset();
     }
   }

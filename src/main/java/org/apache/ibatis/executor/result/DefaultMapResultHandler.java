@@ -25,14 +25,30 @@ import org.apache.ibatis.session.ResultContext;
 import org.apache.ibatis.session.ResultHandler;
 
 /**
+ * 专门处理 Map 的结果
  * @author Clinton Begin
  */
 public class DefaultMapResultHandler<K, V> implements ResultHandler<V> {
 
+  /**
+   * map 结果
+   */
   private final Map<K, V> mappedResults;
+  /**
+   * 聚合的key: mapKey
+   */
   private final String mapKey;
+  /**
+   * 对象工厂
+   */
   private final ObjectFactory objectFactory;
+  /**
+   * 没作用
+   */
   private final ObjectWrapperFactory objectWrapperFactory;
+  /**
+   * 反射工厂
+   */
   private final ReflectorFactory reflectorFactory;
 
   @SuppressWarnings("unchecked")
@@ -40,19 +56,27 @@ public class DefaultMapResultHandler<K, V> implements ResultHandler<V> {
     this.objectFactory = objectFactory;
     this.objectWrapperFactory = objectWrapperFactory;
     this.reflectorFactory = reflectorFactory;
+    //创建 Map 对象
     this.mappedResults = objectFactory.create(Map.class);
     this.mapKey = mapKey;
   }
 
   @Override
   public void handleResult(ResultContext<? extends V> context) {
+    //获取查询的结果
     final V value = context.getResultObject();
+    //创建结果对象的 MetaObject
     final MetaObject mo = MetaObject.forObject(value, objectFactory, objectWrapperFactory, reflectorFactory);
+    //根据 mapKey 获取值
     // TODO is that assignment always true?
     final K key = (K) mo.getValue(mapKey);
+    //添加到结果中
     mappedResults.put(key, value);
   }
 
+  /**
+   * 获取聚合结果
+   */
   public Map<K, V> getMappedResults() {
     return mappedResults;
   }

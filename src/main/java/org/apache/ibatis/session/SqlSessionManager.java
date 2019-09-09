@@ -30,13 +30,23 @@ import org.apache.ibatis.executor.BatchResult;
 import org.apache.ibatis.reflection.ExceptionUtil;
 
 /**
+ * 实现 SqlSessionFactory 和 SqlSession 接口, 是 SqlSession 管理器. 实际上基本没用上
  * @author Larry Meadors
  */
 public class SqlSessionManager implements SqlSessionFactory, SqlSession {
 
+  /**
+   * SqlSessionFactory
+   */
   private final SqlSessionFactory sqlSessionFactory;
+  /**
+   * SqlSession的代理
+   */
   private final SqlSession sqlSessionProxy;
 
+  /**
+   * 本地线程缓存, 用于存储每个线程的 SqlSession 对象
+   */
   private final ThreadLocal<SqlSession> localSqlSession = new ThreadLocal<>();
 
   private SqlSessionManager(SqlSessionFactory sqlSessionFactory) {
@@ -76,6 +86,7 @@ public class SqlSessionManager implements SqlSessionFactory, SqlSession {
   }
 
   public void startManagedSession() {
+    //发起一个可被管理的 SqlSession
     this.localSqlSession.set(openSession());
   }
 
@@ -344,20 +355,29 @@ public class SqlSessionManager implements SqlSessionFactory, SqlSession {
 
     @Override
     public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
+      //从本地线程缓存中获取 SqlSession
       final SqlSession sqlSession = SqlSessionManager.this.localSqlSession.get();
+      // sqlSession 不为 null
       if (sqlSession != null) {
         try {
+          //直接执行
           return method.invoke(sqlSession, args);
         } catch (Throwable t) {
           throw ExceptionUtil.unwrapThrowable(t);
         }
+        //如果 sqlSession 为 null
       } else {
+        //新打开一个 SqlSession
         try (SqlSession autoSqlSession = openSession()) {
           try {
+            //执行方法
             final Object result = method.invoke(autoSqlSession, args);
+            //提交事务
             autoSqlSession.commit();
+            //返回结果
             return result;
           } catch (Throwable t) {
+            //如果报错, 则回滚事务
             autoSqlSession.rollback();
             throw ExceptionUtil.unwrapThrowable(t);
           }
