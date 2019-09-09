@@ -53,7 +53,7 @@ public class Plugin implements InvocationHandler {
   }
 
   /**
-   * 创建代理对象, 如果找不到拦截器上面的
+   * 创建代理对象, 如果找不到拦截器上面的定义的接口, 则直接返回原对象
    */
   public static Object wrap(Object target, Interceptor interceptor) {
     //获取拦截的方法的映射
