@@ -19,6 +19,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 
 /**
+ * 方法调用
  * @author Clinton Begin
  */
 public class Invocation {
