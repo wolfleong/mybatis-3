@@ -53,14 +53,15 @@ public class Plugin implements InvocationHandler {
   }
 
   /**
-   * 创建代理对象, 如果找不到拦截器上面的定义的接口, 则直接返回原对象
+   * 创建代理对象, 如果找不到拦截器上面的定义的接口, 则直接返回原对象, 处理多个 Interceptor 也不影响
+   * - 但是, 如果 target 实现多个接口, 每个 Interceptor 处理不同的接口, 返回的代理对象就有问题了, 现在的拦截的对象不会出现这种情况
    */
   public static Object wrap(Object target, Interceptor interceptor) {
     //获取拦截的方法的映射
     Map<Class<?>, Set<Method>> signatureMap = getSignatureMap(interceptor);
     //获取目标类型
     Class<?> type = target.getClass();
-    //获取目标类的所有接口
+    //获取目标类的所有接口, 这里的 interfaces 最多只有一个
     Class<?>[] interfaces = getAllInterfaces(type, signatureMap);
     //如果有实现接口, 则创建目标对象的 JDK 代理对象
     if (interfaces.length > 0) {
