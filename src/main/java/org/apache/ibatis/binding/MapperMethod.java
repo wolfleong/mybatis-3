@@ -153,11 +153,16 @@ public class MapperMethod {
           + " needs either a @ResultMap annotation, a @ResultType annotation,"
           + " or a resultType attribute in XML so a ResultHandler can be used as a parameter.");
     }
+    //将实际参数, 转换成 sql 参数
     Object param = method.convertArgsToSqlCommandParam(args);
+    //如果有分页
     if (method.hasRowBounds()) {
+      //获取分页参数
       RowBounds rowBounds = method.extractRowBounds(args);
+      //获取 ResultHandler , 并调用分页参数查询
       sqlSession.select(command.getName(), param, rowBounds, method.extractResultHandler(args));
     } else {
+      //获取 ResultHandler, 并查询
       sqlSession.select(command.getName(), param, method.extractResultHandler(args));
     }
   }
