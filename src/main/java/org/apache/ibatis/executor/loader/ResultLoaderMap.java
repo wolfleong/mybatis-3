@@ -42,7 +42,7 @@ import org.apache.ibatis.session.ResultHandler;
 import org.apache.ibatis.session.RowBounds;
 
 /**
- * 主要存每个结果对象中的延迟加载属性
+ * 存每个结果对象中的延迟加载属性名与 ResultLoader 映射
  * @author Clinton Begin
  * @author Franta Mejta
  */
@@ -83,6 +83,9 @@ public class ResultLoaderMap {
     return loaderMap.containsKey(property.toUpperCase(Locale.ENGLISH));
   }
 
+  /**
+   * 指定属性名延迟加载
+   */
   public boolean load(String property) throws SQLException {
     //获取 LoadPair
     LoadPair pair = loaderMap.remove(property.toUpperCase(Locale.ENGLISH));
@@ -97,6 +100,10 @@ public class ResultLoaderMap {
     return false;
   }
 
+  /**
+   * 删除延迟加载的 ResultLoader
+   * @param property 属性名
+   */
   public void remove(String property) {
     loaderMap.remove(property.toUpperCase(Locale.ENGLISH));
   }

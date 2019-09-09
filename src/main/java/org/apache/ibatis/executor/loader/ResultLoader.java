@@ -35,7 +35,7 @@ import org.apache.ibatis.transaction.Transaction;
 import org.apache.ibatis.transaction.TransactionFactory;
 
 /**
- * 子查询结果加载器, 嵌套子查询有两种情况
+ * 每个属性子查询结果加载器, 嵌套子查询有两种情况, 主要负责保存一次延迟加载操作所需的全部信息
  *  - 构造器映射
  *  - 普通属性映射
  *
