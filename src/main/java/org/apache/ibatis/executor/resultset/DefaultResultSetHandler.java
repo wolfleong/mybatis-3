@@ -382,7 +382,10 @@ public class DefaultResultSetHandler implements ResultSetHandler {
 
   /**
    * 获取下一个 ResultSet, 并封装成 ResultSetWrapper
-   * todo 这里不需要处理 updateCount 这种类型吗
+   * 这里不需要处理 updateCount 这种类型, 因为:
+   * - !stmt.getMoreResults() && stmt.getUpdateCount() == -1 表示肯定没有结果集
+   * - !(!stmt.getMoreResults() && stmt.getUpdateCount() == -1) 表示有结果集或更新数
+   * 如果为更新数, 则获取 rs 为 null, 会继续找, 直接不满足if后, 返回 null
    */
   private ResultSetWrapper getNextResultSet(Statement stmt) {
     // Making this method tolerant of bad JDBC drivers
