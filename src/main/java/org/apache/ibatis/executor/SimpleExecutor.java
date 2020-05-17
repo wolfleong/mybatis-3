@@ -33,7 +33,7 @@ import org.apache.ibatis.transaction.Transaction;
 
 /**
  * 简单的 Executor 实现类
- * - 每次开始读或写操作, 都创建对应的Statement对象
+ * - 每次开始读或写操作, 都创建对应的 StatementHandler 对象
  * - 执行完成后, 关闭 Statement 对象
  * @author Clinton Begin
  */
