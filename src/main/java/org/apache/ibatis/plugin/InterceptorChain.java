@@ -32,6 +32,7 @@ public class InterceptorChain {
 
   /**
    * 将当前实例, 应用所有拦截器
+   * - 这里有性能问题, 每个 Interceptor 都会生成一个代理对象, 很影响性能
    */
   public Object pluginAll(Object target) {
     //遍历所有拦截器, 应用插件
