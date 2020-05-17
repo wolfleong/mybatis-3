@@ -29,7 +29,13 @@ import org.apache.ibatis.cache.Cache;
  */
 public class LruCache implements Cache {
 
+  /**
+   * 真正的缓存
+   */
   private final Cache delegate;
+  /**
+   * 用于实现 LRU 的 Map
+   */
   private Map<Object, Object> keyMap;
   private Object eldestKey;
 
